@@ -156,7 +156,7 @@ const singlePlayer = new Audio();
   const formatTime = (t) => `${Number(t).toFixed(2)}s`;
 
   const pad2 = (n) => String(n).padStart(2, '0');
-  const demoUrlForIndex = (i) => `sample/sample${pad2(i + 1)}.mp3`;
+  const demoUrlForIndex = (i) => `sample/sample${pad2(i + 1)}.m4a`;
 
   const focusRecordButton = (i) => {
     const btn = document.querySelector(`#line-${i} button[data-act="record"][data-i="${i}"]`);
