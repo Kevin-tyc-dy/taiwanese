@@ -102,7 +102,6 @@
     { role:"阿志", text:"袂使食！這馬開始特訓！大胖，換你！上厲害彼句！", start: 18.0, end: 25.0 },
     { role:"大胖", text:"喔好！祝阿嬤...身體健康...萬事如意...食百二...", start: 25.0, end: 32.0 },
     { role:"阿志", text:"太普通啦！愛閣較有力咧！", start: 32.0, end: 36.0 },
-    { role:"音效", text:"（音效：門開聲／腳步聲）", skip:true, start: 36.0, end: 38.0 },
     { role:"阿嬤", text:"乖孫～阿嬤來發紅包囉～", start: 38.0, end: 44.0 },
     { role:"三人", text:"阿嬤！", start: 44.0, end: 46.0 },
     { role:"大胖", text:"阿嬤！祝你...祝你...「身體硬梆梆」！", start: 46.0, end: 52.0 },
@@ -201,12 +200,16 @@
     btnClear.disabled = !recordings.some(Boolean);
   };
 
-  const setActive = (i) => {
-    currentIndex = clamp(i, 0, lines.length - 1);
-    while (lines[currentIndex]?.skip && currentIndex < lines.length - 1) currentIndex++;
-    render();
+const setActive = (i, { scroll = true } = {}) => {
+  currentIndex = clamp(i, 0, lines.length - 1);
+  while (lines[currentIndex]?.skip && currentIndex < lines.length - 1) currentIndex++;
+  render();
+
+  if (scroll) {
     document.getElementById(`line-${currentIndex}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  };
+  }
+};
+
 
   const clearLine = (i) => {
     if (recordingUrls[i]) URL.revokeObjectURL(recordingUrls[i]);
@@ -247,7 +250,8 @@
     const line = lines[i];
     if (line.skip) return;
 
-    setActive(i);
+    setActive(i, { scroll: false });
+
 
     // 播示範前：跳到該句畫面並暫停（可關閉）
     if (chkDemoSeek.checked) {
@@ -341,6 +345,7 @@
     demoPlayer.pause();
     video.muted = true;
     video.pause();
+ video.scrollIntoView({ behavior: 'smooth', block: 'start' }); // ✅ 回放時回到影片區
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
