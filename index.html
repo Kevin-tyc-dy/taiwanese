@@ -201,12 +201,15 @@
     btnClear.disabled = !recordings.some(Boolean);
   };
 
-  const setActive = (i) => {
-    currentIndex = clamp(i, 0, lines.length - 1);
-    while (lines[currentIndex]?.skip && currentIndex < lines.length - 1) currentIndex++;
-    render();
+const setActive = (i, doScroll = true) => {
+  currentIndex = clamp(i, 0, lines.length - 1);
+  while (lines[currentIndex]?.skip && currentIndex < lines.length - 1) currentIndex++;
+  render();
+
+  if (doScroll) {
     document.getElementById(`line-${currentIndex}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  };
+  }
+};
 
   const clearLine = (i) => {
     if (recordingUrls[i]) URL.revokeObjectURL(recordingUrls[i]);
@@ -247,7 +250,7 @@
     const line = lines[i];
     if (line.skip) return;
 
-    setActive(i);
+    setActive(i, false);
 
     // 播示範前：跳到該句畫面並暫停（可關閉）
     if (chkDemoSeek.checked) {
