@@ -77,6 +77,8 @@
   <textarea id="timesOut" readonly placeholder="按「複製時間表」後會出現在這裡"></textarea>
 
 <script>
+// ✅ 1. 在全域宣告一個共用的播放器（這就是我們的「單一窗口」）
+const singlePlayer = new Audio();
 (() => {
   const video = document.getElementById('video');
   const btnInit = document.getElementById('btnInit');
@@ -341,20 +343,25 @@ const setActive = (i, { scroll = true } = {}) => {
   };
 
 const replayAll = async () => {
-    setStatus('回放中（iOS 優化模式）…');
+    setStatus('回放中（iOS 單一播放器模式）…');
     demoPlayer.pause();
     
-    // 1. 暫時移除控制列 (關鍵！防止 iPhone 跳出原生播放暫停遮罩)
+    // 2. 移除控制列（解決畫面變暗/大箭頭問題）
     video.removeAttribute('controls');
     
+    // 3. 關鍵：在使用者點擊的當下，先「解鎖」播放器
+    // 騙 iOS 說我們已經開始用了，這樣後面換 src 就不會被擋
+    singlePlayer.src = ''; 
+    try {
+      await singlePlayer.play().catch(() => {}); 
+      singlePlayer.pause();
+    } catch(e) {}
+
     video.muted = true;
     video.currentTime = 0;
-    
-    // 讓畫面平滑捲動到影片區
     video.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
     let nextIndex = 0;
-    let currentAudio = null;
 
     const onTimeUpdate = () => {
       const t = video.currentTime;
@@ -362,37 +369,34 @@ const replayAll = async () => {
       // --- A. 播放下一句 ---
       if (nextIndex < lines.length && t >= lines[nextIndex].start) {
         
-        // 切斷上一句聲音
-        if (currentAudio) {
-          currentAudio.pause();
-          currentAudio = null;
-        }
+        // 確保上一句閉嘴
+        singlePlayer.pause();
 
         const line = lines[nextIndex];
 
         if (!line.skip && recordings[nextIndex]) {
           setActive(nextIndex, { scroll: false });
 
+          // ✅ 4. 重複使用同一個 singlePlayer，只換 src
           const url = URL.createObjectURL(recordings[nextIndex]);
-          currentAudio = new Audio(url);
+          singlePlayer.src = url;
           
-          // iOS 技巧：有時候建立 Audio 需要明確指定 playsInline 或載入
-          currentAudio.play().catch((e) => {
-            console.log('Audio autoplay blocked?', e);
+          // 因為前面解鎖過，這裡就算隔了10秒也會響
+          singlePlayer.play().catch((e) => {
+            console.error('播放被阻擋:', e);
           });
-          
-          currentAudio.onended = () => { currentAudio = null; };
         }
         nextIndex++;
       }
 
       // --- B. 超時截斷 ---
+      // 檢查正在播的那一句 (nextIndex - 1)
       const playingIndex = nextIndex - 1;
-      if (playingIndex >= 0 && currentAudio) {
+      if (playingIndex >= 0) {
         const playingLine = lines[playingIndex];
-        if (t >= playingLine.end) {
-          currentAudio.pause();
-          currentAudio = null;
+        // 如果影片時間超過這句的 end，且播放器還在跑，就強制暫停
+        if (t >= playingLine.end && !singlePlayer.paused) {
+          singlePlayer.pause();
         }
       }
     };
@@ -401,13 +405,10 @@ const replayAll = async () => {
       video.removeEventListener('timeupdate', onTimeUpdate);
       video.removeEventListener('ended', cleanup);
       
-      // 停止聲音
-      if (currentAudio) {
-        currentAudio.pause();
-        currentAudio = null;
-      }
-      
-      // 2. 回放結束後，把控制列加回去，讓使用者可以自己拉進度條
+      singlePlayer.pause(); // 確保聲音停止
+      singlePlayer.src = ''; // 清空來源
+
+      // 加回控制列
       video.setAttribute('controls', '');
       
       if (video.ended) setStatus('回放結束');
@@ -419,8 +420,7 @@ const replayAll = async () => {
     try {
       await video.play();
     } catch (err) {
-      alert('播放失敗，iOS 需要您先點擊畫面');
-      // 如果失敗也要把 controls 加回去，不然使用者會壞掉
+      alert('播放失敗，請再試一次');
       video.setAttribute('controls', '');
     }
   };
