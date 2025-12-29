@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>影片配音（網頁回放版）</title>
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; margin: 20px; }
+    video { width: min(900px, 100%); background: #000; border-radius: 12px; }
+    .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin: 12px 0; }
+    button { padding: 10px 14px; }
+    .pill { padding: 4px 10px; border-radius: 999px; background:#f2f2f2; display:inline-block; }
+    .hint { color:#555; line-height:1.6; }
+    .warn { color:#a33; }
+  </style>
+</head>
+<body>
+  <h2>影片播放 + 錄音表演 + 錄完直接配回影片（僅網頁播放）</h2>
+
+  <video id="video" controls playsinline preload="metadata" src="video.mp4"></video>
+
+  <div class="row">
+    <button id="btnInit">1) 允許麥克風</button>
+    <button id="btnStart" disabled>2) 開始表演（播放+錄音）</button>
+    <button id="btnStop" disabled>3) 停止錄音</button>
+    <button id="btnReplay" disabled>4) 回放成品（影片+錄音）</button>
+    <span id="status" class="pill">尚未初始化</span>
+  </div>
+
+  <p class="hint">
+    - 表演時影片會正常播放，但<strong>成品回放</strong>會把影片靜音，改播你的錄音來達到「配上影片」。<br/>
+    - 若你要在表演時也<strong>同時聽到自己聲音監聽</strong>，我也能加（但容易回授/延遲）。
+  </p>
+
+  <div class="row">
+    <audio id="take" controls style="min-width:320px;"></audio>
+    <a id="dl" download="take.webm" style="display:none;">下載錄音</a>
+  </div>
+
+  <p id="compat" class="hint warn" style="display:none;"></p>
+
+<script>
+(() => {
+  const video = document.getElementById('video');
+  const btnInit = document.getElementById('btnInit');
+  const btnStart = document.getElementById('btnStart');
+  const btnStop = document.getElementById('btnStop');
+  const btnReplay = document.getElementById('btnReplay');
+  const statusEl = document.getElementById('status');
+  const take = document.getElementById('take');
+  const dl = document.getElementById('dl');
+  const compat = document.getElementById('compat');
+
+  let micStream = null;
+  let recorder = null;
+  let chunks = [];
+  let takeUrl = null;
+
+  const setStatus = (t) => statusEl.textContent = t;
+
+  const pickMime = () => {
+    // 盡量挑相容的錄音格式
+    const candidates = [
+      'audio/webm;codecs=opus',
+      'audio/webm',
+      'audio/ogg;codecs=opus',
+      'audio/ogg'
+    ];
+    for (const m of candidates) {
+      if (window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(m)) return m;
+    }
+    return ''; // 讓瀏覽器自行決定
+  };
+
+  btnInit.addEventListener('click', async () => {
+    compat.style.display = 'none';
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      compat.textContent = '此瀏覽器不支援 getUserMedia，建議使用 Chrome / Edge / Safari 新版。';
+      compat.style.display = 'block';
+      return;
+    }
+    if (!window.MediaRecorder) {
+      compat.textContent = '此瀏覽器不支援 MediaRecorder（錄音），建議使用 Chrome / Edge / Safari 17+。';
+      compat.style.display = 'block';
+      return;
+    }
+
+    try {
+      micStream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+      });
+      btnStart.disabled = false;
+      setStatus('麥克風已就緒');
+    } catch (e) {
+      alert('取得麥克風失敗：' + e.message);
+      setStatus('麥克風權限失敗');
+    }
+  });
+
+  btnStart.addEventListener('click', async () => {
+    if (!micStream) return;
+
+    // 清掉上一 take
+    if (takeUrl) URL.revokeObjectURL(takeUrl);
+    takeUrl = null;
+    take.src = '';
+    dl.style.display = 'none';
+    btnReplay.disabled = true;
+
+    // 讓影片從頭開始，開始錄音
+    chunks = [];
+    const mimeType = pickMime();
+    recorder = new MediaRecorder(micStream, mimeType ? { mimeType } : undefined);
+
+    recorder.ondataavailable = (e) => {
+      if (e.data && e.data.size > 0) chunks.push(e.data);
+    };
+
+    recorder.onstop = () => {
+      const blob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
+      takeUrl = URL.createObjectURL(blob);
+      take.src = takeUrl;
+      dl.href = takeUrl;
+      dl.style.display = 'inline';
+      btnReplay.disabled = false;
+      setStatus('錄音完成，可回放成品');
+    };
+
+    // 同步策略（簡單版）：錄音 start 後立刻播放影片
+    // 如果你想更準：可以先 video.play() 成功後再 recorder.start()
+    recorder.start();
+
+    video.muted = false;          // 表演時可聽原影片聲音（你也可以改成 true）
+    video.currentTime = 0;
+    try { await video.play(); } catch (_) {}
+
+    btnStart.disabled = true;
+    btnStop.disabled = false;
+    setStatus('錄音中…（表演中）');
+
+    // 影片播完自動停
+    video.onended = () => {
+      if (!btnStop.disabled) btnStop.click();
+    };
+  });
+
+  btnStop.addEventListener('click', () => {
+    btnStop.disabled = true;
+    btnStart.disabled = false;
+    setStatus('停止中…');
+
+    video.pause();
+    if (recorder && recorder.state !== 'inactive') recorder.stop();
+  });
+
+  btnReplay.addEventListener('click', async () => {
+    if (!takeUrl) return;
+
+    // 成品回放：影片靜音 + 播錄音，同步從 0 秒開始
+    video.muted = true;
+    video.currentTime = 0;
+    take.currentTime = 0;
+
+    setStatus('回放成品中…');
+
+    // 盡量同時開始
+    await Promise.allSettled([video.play(), take.play()]);
+
+    // 回放結束時狀態復原
+    const end = () => setStatus('回放結束，可重錄或再回放');
+    video.onended = end;
+    take.onended = end;
+  });
+})();
+</script>
+</body>
+</html>
