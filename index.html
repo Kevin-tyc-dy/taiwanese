@@ -32,6 +32,7 @@
 
     .active { background: #fff7d6; border-color: #f2d28a; }
     .done { background: #eafff6; border-color: #86e3c4; }
+    .skip { opacity: .75; background:#fafafa; }
     .warn { color: #a33; }
     audio { width: min(920px, 100%); }
     textarea { width: min(920px, 100%); height: 140px; }
@@ -57,7 +58,7 @@
   </div>
 
   <p class="hint">
-    ✅ 示範檔放在 <span class="pill">sample/</span> 資料夾，例如第 1 句：<span class="pill">sample/sample01.m4a</span><br>
+    ✅ 示範檔放在 <span class="pill">sample/</span> 資料夾，例如第 1 句：<span class="pill">sample/sample01.mp3</span><br>
     ✅ 老師修秒數：播到位置 → 按該句「📍設開始 / 📍設結束」<br>
     ✅ 按「🔊 聽示範」：會播放示範；播完會自動把焦點移到「🎤 錄這一句」方便學生接著錄
   </p>
@@ -93,7 +94,7 @@
   const chkAutoNext = document.getElementById('chkAutoNext');
   const chkDemoSeek = document.getElementById('chkDemoSeek');
 
-  // ✅ 已去掉第7句（音效那句）
+  // ✅ 先用預設時間（你會用「設開始/設結束」去修正）
   const lines = [
     { role:"阿志", text:"聽好！今年阿嬤的紅包特別大包，咱絕對袂使漏氣！", start: 0.0,  end: 6.0 },
     { role:"美美", text:"哼，我早就準備好了。「金銀財寶滿厝內，好運這馬緊落來」！", start: 6.0,  end: 12.0 },
@@ -101,15 +102,16 @@
     { role:"阿志", text:"袂使食！這馬開始特訓！大胖，換你！上厲害彼句！", start: 18.0, end: 25.0 },
     { role:"大胖", text:"喔好！祝阿嬤...身體健康...萬事如意...食百二...", start: 25.0, end: 32.0 },
     { role:"阿志", text:"太普通啦！愛閣較有力咧！", start: 32.0, end: 36.0 },
+    { role:"音效", text:"（音效：門開聲／腳步聲）", skip:true, start: 36.0, end: 38.0 },
     { role:"阿嬤", text:"乖孫～阿嬤來發紅包囉～", start: 38.0, end: 44.0 },
     { role:"三人", text:"阿嬤！", start: 44.0, end: 46.0 },
     { role:"大胖", text:"阿嬤！祝你...祝你...「身體硬梆梆」！", start: 46.0, end: 52.0 },
     { role:"阿嬤", text:"喔～身體真勇啦吼！真乖真乖，大包的予你！", start: 52.0, end: 60.0 }
   ];
 
-  let micStream = null;
+  let micStream = null;                 // 全站共用一支麥克風 stream
   let currentIndex = 0;
-  const recordings = new Array(lines.length).fill(null);
+  const recordings = new Array(lines.length).fill(null); // Blob per line
   const recordingUrls = new Array(lines.length).fill(null);
 
   const setStatus = (t) => statusEl.textContent = t;
@@ -149,11 +151,11 @@
   });
 
   const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
-  const nowTime = () => Number(video.currentTime.toFixed(2));
+  const nowTime = () => Number(video.currentTime.toFixed(2)); // 老師抓秒數用
   const formatTime = (t) => `${Number(t).toFixed(2)}s`;
 
   const pad2 = (n) => String(n).padStart(2, '0');
-  const demoUrlForIndex = (i) => `sample/sample${pad2(i + 1)}.m4a`;
+  const demoUrlForIndex = (i) => `sample/sample${pad2(i + 1)}.mp3`;
 
   const focusRecordButton = (i) => {
     const btn = document.querySelector(`#line-${i} button[data-act="record"][data-i="${i}"]`);
@@ -167,21 +169,22 @@
       div.className = 'line';
       div.id = `line-${i}`;
 
+      if (l.skip) div.classList.add('skip');
       if (i === currentIndex) div.classList.add('active');
       if (recordings[i]) div.classList.add('done');
 
       div.innerHTML = `
         <div class="lineHeader">
           <div>
-            <div class="role">${l.role} <span class="badge">第 ${i+1} 句</span></div>
+            <div class="role">${l.role} <span class="badge">第 ${i+1} 句</span> ${l.skip ? '<span class="badge">不用錄</span>' : ''}</div>
           </div>
           <div class="time">${formatTime(l.start)} → ${formatTime(l.end)}</div>
         </div>
         <div class="text">${l.text}</div>
 
         <div class="controls">
-          <button data-act="record" data-i="${i}" ${!micStream ? 'disabled' : ''}>🎤 錄這一句</button>
-          <button data-act="demo" data-i="${i}">🔊 聽示範</button>
+          ${l.skip ? '' : `<button data-act="record" data-i="${i}" ${!micStream ? 'disabled' : ''}>🎤 錄這一句</button>`}
+          ${l.skip ? '' : `<button data-act="demo" data-i="${i}">🔊 聽示範</button>`}
           <button data-act="goto" data-i="${i}">⏩ 跳到這句畫面</button>
           <button data-act="play" data-i="${i}" ${recordings[i] ? '' : 'disabled'}>▶ 重聽這句</button>
           <button data-act="clear" data-i="${i}" ${recordings[i] ? '' : 'disabled'}>🗑 清除這句</button>
@@ -198,13 +201,11 @@
     btnClear.disabled = !recordings.some(Boolean);
   };
 
-  // ✅ 增加 doScroll 參數：回放時可關掉捲動
-  const setActive = (i, doScroll = true) => {
+  const setActive = (i) => {
     currentIndex = clamp(i, 0, lines.length - 1);
+    while (lines[currentIndex]?.skip && currentIndex < lines.length - 1) currentIndex++;
     render();
-    if (doScroll) {
-      document.getElementById(`line-${currentIndex}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+    document.getElementById(`line-${currentIndex}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
 
   const clearLine = (i) => {
@@ -223,6 +224,7 @@
     preview.play().catch(()=>{});
   };
 
+  // ✅ 老師一鍵設秒數：自動保護 end > start
   const setStart = (i) => {
     const t = nowTime();
     lines[i].start = t;
@@ -240,27 +242,36 @@
     render();
   };
 
+  // ✅ 播放示範：可選擇自動跳到該句畫面並暫停；播完聚焦到錄音按鈕
   const playDemo = async (i) => {
     const line = lines[i];
-    setActive(i); // 平常操作保留捲動
+    if (line.skip) return;
 
+    setActive(i);
+
+    // 播示範前：跳到該句畫面並暫停（可關閉）
     if (chkDemoSeek.checked) {
       video.pause();
       video.muted = true;
       await seekTo(video, line.start);
     }
 
+    // 停止學生錄音預覽（避免兩個音源同時出聲）
     preview.pause();
 
     const url = demoUrlForIndex(i);
     demoPlayer.src = url;
 
     demoPlayer.onerror = () => {
-      alert(`找不到示範檔：${url}\n請確認 sample 資料夾內是否有 sample${pad2(i + 1)}.m4a`);
+      alert(`找不到示範檔：${url}\n請確認 sample 資料夾內是否有 sample${pad2(i + 1)}.mp3`);
     };
 
     setStatus(`播放示範：第 ${i+1} 句`);
-    try { await demoPlayer.play(); } catch {}
+    try {
+      await demoPlayer.play();
+    } catch {
+      // 若被瀏覽器擋，使用者再按一次即可
+    }
 
     demoPlayer.onended = () => {
       setStatus(`示範播完：第 ${i+1} 句（可開始錄音）`);
@@ -268,28 +279,29 @@
     };
   };
 
-  // ✅ B 模式：錄音時永遠靜音（影片也靜音）
   const recordLine = async (i) => {
     const line = lines[i];
+    if (line.skip) return;
 
     setActive(i);
     setStatus(`準備第 ${i+1} 句…`);
 
+    // 先停止示範（避免兩個音源同時出聲）
     demoPlayer.pause();
     demoPlayer.currentTime = 0;
 
-    preview.pause();
-    preview.currentTime = 0;
-
-    video.pause();
-    video.muted = true; // ★重點：錄音期間永遠靜音
-
+    // 1) 跳到該句開始
     await seekTo(video, line.start);
 
+    // 2) 設定錄音器
     const mimeType = pickMime();
     const recorder = new MediaRecorder(micStream, mimeType ? { mimeType } : undefined);
     const chunks = [];
 
+    // 3) 錄音時影片原音是否播放
+    video.muted = !chkHearVideo.checked;
+
+    // 4) 盯影片時間，到 end 自動停
     const stopAtEnd = () => {
       video.pause();
       cleanup();
@@ -315,11 +327,12 @@
       if (chkAutoNext.checked) setActive(i + 1);
     };
 
+    // 5) 開始播放 + 開始錄音
     video.addEventListener('timeupdate', onTime);
     video.addEventListener('ended', stopAtEnd);
 
     recorder.start();
-    setStatus(`錄音中：第 ${i+1} 句…（靜音）`);
+    setStatus(`錄音中：第 ${i+1} 句…`);
     await video.play().catch(()=>{});
   };
 
@@ -330,10 +343,12 @@
     video.pause();
 
     for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (line.skip) continue;
       if (!recordings[i]) continue;
 
-      setActive(i, false); // ✅ 回放時不捲動
-      await seekTo(video, lines[i].start);
+      setActive(i);
+      await seekTo(video, line.start);
 
       await video.play().catch(()=>{});
       const url = URL.createObjectURL(recordings[i]);
@@ -358,6 +373,7 @@
     const out = lines.map(l => ({
       role: l.role,
       text: l.text,
+      ...(l.skip ? { skip: true } : {}),
       start: Number(l.start.toFixed(2)),
       end: Number(l.end.toFixed(2)),
     }));
@@ -373,6 +389,7 @@
     }
   };
 
+  // 事件：按鈕操作
   scriptEl.addEventListener('click', async (e) => {
     const btn = e.target.closest('button');
     if (!btn) return;
@@ -388,6 +405,7 @@
     if (act === 'setEnd') { setActive(i); setEnd(i); }
   });
 
+  // 初始化麥克風
   btnInit.addEventListener('click', async () => {
     if (!ensureCompatibility()) return;
     try {
@@ -407,6 +425,7 @@
   btnClear.addEventListener('click', clearAll);
   btnCopyTimes.addEventListener('click', copyTimes);
 
+  // 初次渲染
   setActive(0);
   render();
 })();
