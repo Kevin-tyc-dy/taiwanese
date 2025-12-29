@@ -340,19 +340,23 @@ const setActive = (i, { scroll = true } = {}) => {
     await video.play().catch(()=>{});
   };
 
-  const replayAll = async () => {
+const replayAll = async () => {
     setStatus('回放成品中…');
     demoPlayer.pause();
     video.muted = true;
     video.pause();
- video.scrollIntoView({ behavior: 'smooth', block: 'start' }); // ✅ 回放時回到影片區
+    
+    // ✅ 1. 確保一開始先捲動到影片位置
+    video.scrollIntoView({ behavior: 'smooth', block: 'center' }); 
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       if (line.skip) continue;
       if (!recordings[i]) continue;
 
-      setActive(i);
+      // ✅ 2. 這裡加上 { scroll: false }，這樣播放時就不會一直跳去錄音區
+      setActive(i, { scroll: false }); 
+
       await seekTo(video, line.start);
 
       await video.play().catch(()=>{});
