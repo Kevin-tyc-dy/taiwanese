@@ -3,63 +3,135 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>影片配音（網頁回放版）</title>
+  <title>逐句錄音配音（老師模式＋示範聆聽）</title>
   <style>
     body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; margin: 20px; }
-    video { width: min(900px, 100%); background: #000; border-radius: 12px; }
+    h2 { margin: 0 0 10px; }
+    video { width: min(920px, 100%); background:#000; border-radius: 12px; }
     .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin: 12px 0; }
-    button { padding: 10px 14px; }
+    button { padding: 9px 12px; border-radius: 10px; border: 1px solid #ddd; background: #fff; cursor: pointer; }
+    button:disabled { opacity: .5; cursor: not-allowed; }
     .pill { padding: 4px 10px; border-radius: 999px; background:#f2f2f2; display:inline-block; }
-    .hint { color:#555; line-height:1.6; }
-    .warn { color:#a33; }
+    .hint { color:#555; line-height:1.6; margin-top: 6px; }
+
+    .script { width: min(920px, 100%); }
+    .line {
+      border: 1px solid #e3e3e3;
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 12px;
+      display: grid;
+      gap: 8px;
+    }
+    .lineHeader { display:flex; justify-content:space-between; gap: 10px; align-items:flex-start; }
+    .role { font-weight: 800; font-size: 18px; }
+    .time { color:#666; font-size: 13px; white-space: nowrap; }
+    .text { font-size: 18px; line-height: 1.5; }
+    .controls { display:flex; flex-wrap:wrap; gap: 8px; }
+    .badge { font-size: 12px; padding: 3px 8px; border-radius: 999px; background: #f6f6f6; color:#555; }
+
+    .active { background: #fff7d6; border-color: #f2d28a; }
+    .done { background: #eafff6; border-color: #86e3c4; }
+    .skip { opacity: .75; background:#fafafa; }
+    .warn { color: #a33; }
+    audio { width: min(920px, 100%); }
+    textarea { width: min(920px, 100%); height: 140px; }
   </style>
 </head>
 <body>
-  <h2>影片播放 + 錄音表演 + 錄完直接配回影片（僅網頁播放）</h2>
+  <h2>逐句錄音配音（老師模式：一鍵設時間＋示範聆聽）</h2>
 
-  <video id="video" controls playsinline preload="metadata" src="video.mp4"></video>
+  <video id="video" src="video.mp4" controls playsinline preload="metadata"></video>
 
   <div class="row">
     <button id="btnInit">1) 允許麥克風</button>
-    <button id="btnStart" disabled>2) 開始表演（播放+錄音）</button>
-    <button id="btnStop" disabled>3) 停止錄音</button>
-    <button id="btnReplay" disabled>4) 回放成品（影片+錄音）</button>
+    <button id="btnReplayAll" disabled>▶ 回放成品（影片+逐句錄音）</button>
+    <button id="btnClear" disabled>🗑 清除全部錄音</button>
+    <button id="btnCopyTimes">📋 複製時間表（start/end）</button>
     <span id="status" class="pill">尚未初始化</span>
   </div>
 
-  <p class="hint">
-    - 表演時影片會正常播放，但<strong>成品回放</strong>會把影片靜音，改播你的錄音來達到「配上影片」。<br/>
-    - 若你要在表演時也<strong>同時聽到自己聲音監聽</strong>，我也能加（但容易回授/延遲）。
-  </p>
-
   <div class="row">
-    <audio id="take" controls style="min-width:320px;"></audio>
-    <a id="dl" download="take.webm" style="display:none;">下載錄音</a>
+    <label><input type="checkbox" id="chkHearVideo" checked> 錄音時播放影片原音（做提示）</label>
+    <label><input type="checkbox" id="chkAutoNext" checked> 每句錄完自動跳下一句</label>
+    <label><input type="checkbox" id="chkDemoSeek" checked> 按「聽示範」自動跳到該句畫面並暫停</label>
   </div>
 
+  <p class="hint">
+    ✅ 示範檔放在 <span class="pill">sample/</span> 資料夾，例如第 1 句：<span class="pill">sample/sample01.mp3</span><br>
+    ✅ 老師修秒數：播到位置 → 按該句「📍設開始 / 📍設結束」<br>
+    ✅ 按「🔊 聽示範」：會播放示範；播完會自動把焦點移到「🎤 錄這一句」方便學生接著錄
+  </p>
+
   <p id="compat" class="hint warn" style="display:none;"></p>
+
+  <div id="script" class="script"></div>
+
+  <h3>示範聆聽</h3>
+  <audio id="demoPlayer" controls></audio>
+
+  <h3>單句重聽（學生錄音）</h3>
+  <audio id="preview" controls></audio>
+
+  <h3>時間表輸出（複製用）</h3>
+  <textarea id="timesOut" readonly placeholder="按「複製時間表」後會出現在這裡"></textarea>
 
 <script>
 (() => {
   const video = document.getElementById('video');
   const btnInit = document.getElementById('btnInit');
-  const btnStart = document.getElementById('btnStart');
-  const btnStop = document.getElementById('btnStop');
-  const btnReplay = document.getElementById('btnReplay');
+  const btnReplayAll = document.getElementById('btnReplayAll');
+  const btnClear = document.getElementById('btnClear');
+  const btnCopyTimes = document.getElementById('btnCopyTimes');
   const statusEl = document.getElementById('status');
-  const take = document.getElementById('take');
-  const dl = document.getElementById('dl');
+  const scriptEl = document.getElementById('script');
   const compat = document.getElementById('compat');
+  const preview = document.getElementById('preview');
+  const demoPlayer = document.getElementById('demoPlayer');
+  const timesOut = document.getElementById('timesOut');
 
-  let micStream = null;
-  let recorder = null;
-  let chunks = [];
-  let takeUrl = null;
+  const chkHearVideo = document.getElementById('chkHearVideo');
+  const chkAutoNext = document.getElementById('chkAutoNext');
+  const chkDemoSeek = document.getElementById('chkDemoSeek');
+
+  // ✅ 先用預設時間（你會用「設開始/設結束」去修正）
+  const lines = [
+    { role:"阿志", text:"聽好！今年阿嬤的紅包特別大包，咱絕對袂使漏氣！", start: 0.0,  end: 6.0 },
+    { role:"美美", text:"哼，我早就準備好了。「金銀財寶滿厝內，好運這馬緊落來」！", start: 6.0,  end: 12.0 },
+    { role:"大胖", text:"啊...我只想要食年糕...腹肚好餓...", start: 12.0, end: 18.0 },
+    { role:"阿志", text:"袂使食！這馬開始特訓！大胖，換你！上厲害彼句！", start: 18.0, end: 25.0 },
+    { role:"大胖", text:"喔好！祝阿嬤...身體健康...萬事如意...食百二...", start: 25.0, end: 32.0 },
+    { role:"阿志", text:"太普通啦！愛閣較有力咧！", start: 32.0, end: 36.0 },
+    
+    { role:"阿嬤", text:"乖孫～阿嬤來發紅包囉～", start: 38.0, end: 44.0 },
+    { role:"三人", text:"阿嬤！", start: 44.0, end: 46.0 },
+    { role:"大胖", text:"阿嬤！祝你...祝你...「身體硬梆梆」！", start: 46.0, end: 52.0 },
+    { role:"阿嬤", text:"喔～身體真勇啦吼！真乖真乖，大包的予你！", start: 52.0, end: 60.0 }
+  ];
+
+  let micStream = null;                 // 全站共用一支麥克風 stream
+  let currentIndex = 0;
+  const recordings = new Array(lines.length).fill(null); // Blob per line
+  const recordingUrls = new Array(lines.length).fill(null);
 
   const setStatus = (t) => statusEl.textContent = t;
 
+  const ensureCompatibility = () => {
+    compat.style.display = 'none';
+    if (!navigator.mediaDevices?.getUserMedia) {
+      compat.textContent = '此瀏覽器不支援 getUserMedia。建議使用 Chrome / Edge / Safari 新版。';
+      compat.style.display = 'block';
+      return false;
+    }
+    if (!window.MediaRecorder) {
+      compat.textContent = '此瀏覽器不支援 MediaRecorder（錄音）。建議使用 Chrome / Edge / Safari 17+。';
+      compat.style.display = 'block';
+      return false;
+    }
+    return true;
+  };
+
   const pickMime = () => {
-    // 盡量挑相容的錄音格式
     const candidates = [
       'audio/webm;codecs=opus',
       'audio/webm',
@@ -67,111 +139,295 @@
       'audio/ogg'
     ];
     for (const m of candidates) {
-      if (window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(m)) return m;
+      if (MediaRecorder.isTypeSupported?.(m)) return m;
     }
-    return ''; // 讓瀏覽器自行決定
+    return '';
   };
 
+  const seekTo = (videoEl, t) => new Promise((resolve) => {
+    const done = () => { videoEl.removeEventListener('seeked', done); resolve(); };
+    videoEl.addEventListener('seeked', done);
+    videoEl.currentTime = t;
+  });
+
+  const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+  const nowTime = () => Number(video.currentTime.toFixed(2)); // 老師抓秒數用
+  const formatTime = (t) => `${Number(t).toFixed(2)}s`;
+
+  const pad2 = (n) => String(n).padStart(2, '0');
+  const demoUrlForIndex = (i) => `sample/sample${pad2(i + 1)}.m4a`;
+
+  const focusRecordButton = (i) => {
+    const btn = document.querySelector(`#line-${i} button[data-act="record"][data-i="${i}"]`);
+    if (btn) btn.focus();
+  };
+
+  const render = () => {
+    scriptEl.innerHTML = '';
+    lines.forEach((l, i) => {
+      const div = document.createElement('div');
+      div.className = 'line';
+      div.id = `line-${i}`;
+
+      if (l.skip) div.classList.add('skip');
+      if (i === currentIndex) div.classList.add('active');
+      if (recordings[i]) div.classList.add('done');
+
+      div.innerHTML = `
+        <div class="lineHeader">
+          <div>
+            <div class="role">${l.role} <span class="badge">第 ${i+1} 句</span> ${l.skip ? '<span class="badge">不用錄</span>' : ''}</div>
+          </div>
+          <div class="time">${formatTime(l.start)} → ${formatTime(l.end)}</div>
+        </div>
+        <div class="text">${l.text}</div>
+
+        <div class="controls">
+          ${l.skip ? '' : `<button data-act="record" data-i="${i}" ${!micStream ? 'disabled' : ''}>🎤 錄這一句</button>`}
+          ${l.skip ? '' : `<button data-act="demo" data-i="${i}">🔊 聽示範</button>`}
+          <button data-act="goto" data-i="${i}">⏩ 跳到這句畫面</button>
+          <button data-act="play" data-i="${i}" ${recordings[i] ? '' : 'disabled'}>▶ 重聽這句</button>
+          <button data-act="clear" data-i="${i}" ${recordings[i] ? '' : 'disabled'}>🗑 清除這句</button>
+
+          <span class="badge">老師模式</span>
+          <button data-act="setStart" data-i="${i}">📍設開始</button>
+          <button data-act="setEnd" data-i="${i}">📍設結束</button>
+        </div>
+      `;
+      scriptEl.appendChild(div);
+    });
+
+    btnReplayAll.disabled = !recordings.some(Boolean);
+    btnClear.disabled = !recordings.some(Boolean);
+  };
+
+  const setActive = (i) => {
+    currentIndex = clamp(i, 0, lines.length - 1);
+    while (lines[currentIndex]?.skip && currentIndex < lines.length - 1) currentIndex++;
+    render();
+    document.getElementById(`line-${currentIndex}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+
+  const clearLine = (i) => {
+    if (recordingUrls[i]) URL.revokeObjectURL(recordingUrls[i]);
+    recordings[i] = null;
+    recordingUrls[i] = null;
+    if (preview.src) preview.src = '';
+    render();
+  };
+
+  const playLine = (i) => {
+    if (!recordings[i]) return;
+    if (recordingUrls[i]) URL.revokeObjectURL(recordingUrls[i]);
+    recordingUrls[i] = URL.createObjectURL(recordings[i]);
+    preview.src = recordingUrls[i];
+    preview.play().catch(()=>{});
+  };
+
+  // ✅ 老師一鍵設秒數：自動保護 end > start
+  const setStart = (i) => {
+    const t = nowTime();
+    lines[i].start = t;
+    if (lines[i].end <= lines[i].start) lines[i].end = Number((lines[i].start + 0.20).toFixed(2));
+    setStatus(`第 ${i+1} 句：start 設為 ${formatTime(lines[i].start)}`);
+    render();
+  };
+
+  const setEnd = (i) => {
+    const t = nowTime();
+    lines[i].end = t;
+    if (lines[i].end <= lines[i].start) lines[i].start = Number((lines[i].end - 0.20).toFixed(2));
+    if (lines[i].start < 0) lines[i].start = 0;
+    setStatus(`第 ${i+1} 句：end 設為 ${formatTime(lines[i].end)}`);
+    render();
+  };
+
+  // ✅ 播放示範：可選擇自動跳到該句畫面並暫停；播完聚焦到錄音按鈕
+  const playDemo = async (i) => {
+    const line = lines[i];
+    if (line.skip) return;
+
+    setActive(i);
+
+    // 播示範前：跳到該句畫面並暫停（可關閉）
+    if (chkDemoSeek.checked) {
+      video.pause();
+      video.muted = true;
+      await seekTo(video, line.start);
+    }
+
+    // 停止學生錄音預覽（避免兩個音源同時出聲）
+    preview.pause();
+
+    const url = demoUrlForIndex(i);
+    demoPlayer.src = url;
+
+    demoPlayer.onerror = () => {
+      alert(`找不到示範檔：${url}\n請確認 sample 資料夾內是否有 sample${pad2(i + 1)}.mp3`);
+    };
+
+    setStatus(`播放示範：第 ${i+1} 句`);
+    try {
+      await demoPlayer.play();
+    } catch {
+      // 若被瀏覽器擋，使用者再按一次即可
+    }
+
+    demoPlayer.onended = () => {
+      setStatus(`示範播完：第 ${i+1} 句（可開始錄音）`);
+      focusRecordButton(i);
+    };
+  };
+
+  const recordLine = async (i) => {
+    const line = lines[i];
+    if (line.skip) return;
+
+    setActive(i);
+    setStatus(`準備第 ${i+1} 句…`);
+
+    // 先停止示範（避免兩個音源同時出聲）
+    demoPlayer.pause();
+    demoPlayer.currentTime = 0;
+
+    // 1) 跳到該句開始
+    await seekTo(video, line.start);
+
+    // 2) 設定錄音器
+    const mimeType = pickMime();
+    const recorder = new MediaRecorder(micStream, mimeType ? { mimeType } : undefined);
+    const chunks = [];
+
+    // 3) 錄音時影片原音是否播放
+    video.muted = !chkHearVideo.checked;
+
+    // 4) 盯影片時間，到 end 自動停
+    const stopAtEnd = () => {
+      video.pause();
+      cleanup();
+      if (recorder.state !== 'inactive') recorder.stop();
+    };
+    const onTime = () => {
+      if (video.currentTime >= line.end) stopAtEnd();
+    };
+    const cleanup = () => {
+      video.removeEventListener('timeupdate', onTime);
+      video.removeEventListener('ended', stopAtEnd);
+    };
+
+    recorder.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+
+    recorder.onstop = () => {
+      const blob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
+      recordings[i] = blob;
+
+      setStatus(`第 ${i+1} 句錄完 ✅`);
+      render();
+
+      if (chkAutoNext.checked) setActive(i + 1);
+    };
+
+    // 5) 開始播放 + 開始錄音
+    video.addEventListener('timeupdate', onTime);
+    video.addEventListener('ended', stopAtEnd);
+
+    recorder.start();
+    setStatus(`錄音中：第 ${i+1} 句…`);
+    await video.play().catch(()=>{});
+  };
+
+  const replayAll = async () => {
+    setStatus('回放成品中…');
+    demoPlayer.pause();
+    video.muted = true;
+    video.pause();
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (line.skip) continue;
+      if (!recordings[i]) continue;
+
+      setActive(i);
+      await seekTo(video, line.start);
+
+      await video.play().catch(()=>{});
+      const url = URL.createObjectURL(recordings[i]);
+      const a = new Audio(url);
+      await a.play().catch(()=>{});
+      await new Promise(r => a.onended = r);
+      URL.revokeObjectURL(url);
+
+      video.pause();
+    }
+
+    setStatus('回放結束，可再錄/再放');
+  };
+
+  const clearAll = () => {
+    for (let i=0;i<lines.length;i++) clearLine(i);
+    setActive(0);
+    setStatus('已清除全部錄音');
+  };
+
+  const copyTimes = async () => {
+    const out = lines.map(l => ({
+      role: l.role,
+      text: l.text,
+      ...(l.skip ? { skip: true } : {}),
+      start: Number(l.start.toFixed(2)),
+      end: Number(l.end.toFixed(2)),
+    }));
+
+    const pretty = JSON.stringify(out, null, 2);
+    timesOut.value = pretty;
+
+    try {
+      await navigator.clipboard.writeText(pretty);
+      setStatus('時間表已複製到剪貼簿 ✅');
+    } catch {
+      setStatus('時間表已產生（可手動全選複製）');
+    }
+  };
+
+  // 事件：按鈕操作
+  scriptEl.addEventListener('click', async (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    const act = btn.dataset.act;
+    const i = Number(btn.dataset.i);
+
+    if (act === 'record') await recordLine(i);
+    if (act === 'demo') await playDemo(i);
+    if (act === 'goto') { setActive(i); await seekTo(video, lines[i].start); await video.play().catch(()=>{}); }
+    if (act === 'play') { setActive(i); playLine(i); }
+    if (act === 'clear') { setActive(i); clearLine(i); }
+    if (act === 'setStart') { setActive(i); setStart(i); }
+    if (act === 'setEnd') { setActive(i); setEnd(i); }
+  });
+
+  // 初始化麥克風
   btnInit.addEventListener('click', async () => {
-    compat.style.display = 'none';
-
-    if (!navigator.mediaDevices?.getUserMedia) {
-      compat.textContent = '此瀏覽器不支援 getUserMedia，建議使用 Chrome / Edge / Safari 新版。';
-      compat.style.display = 'block';
-      return;
-    }
-    if (!window.MediaRecorder) {
-      compat.textContent = '此瀏覽器不支援 MediaRecorder（錄音），建議使用 Chrome / Edge / Safari 17+。';
-      compat.style.display = 'block';
-      return;
-    }
-
+    if (!ensureCompatibility()) return;
     try {
       micStream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
       });
-      btnStart.disabled = false;
-      setStatus('麥克風已就緒');
-    } catch (e) {
-      alert('取得麥克風失敗：' + e.message);
+      setStatus('麥克風已就緒 ✅（可開始逐句錄音 / 老師設秒數 / 聽示範）');
+      setActive(0);
+      render();
+    } catch (err) {
+      alert('取得麥克風失敗：' + err.message);
       setStatus('麥克風權限失敗');
     }
   });
 
-  btnStart.addEventListener('click', async () => {
-    if (!micStream) return;
+  btnReplayAll.addEventListener('click', replayAll);
+  btnClear.addEventListener('click', clearAll);
+  btnCopyTimes.addEventListener('click', copyTimes);
 
-    // 清掉上一 take
-    if (takeUrl) URL.revokeObjectURL(takeUrl);
-    takeUrl = null;
-    take.src = '';
-    dl.style.display = 'none';
-    btnReplay.disabled = true;
-
-    // 讓影片從頭開始，開始錄音
-    chunks = [];
-    const mimeType = pickMime();
-    recorder = new MediaRecorder(micStream, mimeType ? { mimeType } : undefined);
-
-    recorder.ondataavailable = (e) => {
-      if (e.data && e.data.size > 0) chunks.push(e.data);
-    };
-
-    recorder.onstop = () => {
-      const blob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
-      takeUrl = URL.createObjectURL(blob);
-      take.src = takeUrl;
-      dl.href = takeUrl;
-      dl.style.display = 'inline';
-      btnReplay.disabled = false;
-      setStatus('錄音完成，可回放成品');
-    };
-
-    // 同步策略（簡單版）：錄音 start 後立刻播放影片
-    // 如果你想更準：可以先 video.play() 成功後再 recorder.start()
-    recorder.start();
-
-    video.muted = false;          // 表演時可聽原影片聲音（你也可以改成 true）
-    video.currentTime = 0;
-    try { await video.play(); } catch (_) {}
-
-    btnStart.disabled = true;
-    btnStop.disabled = false;
-    setStatus('錄音中…（表演中）');
-
-    // 影片播完自動停
-    video.onended = () => {
-      if (!btnStop.disabled) btnStop.click();
-    };
-  });
-
-  btnStop.addEventListener('click', () => {
-    btnStop.disabled = true;
-    btnStart.disabled = false;
-    setStatus('停止中…');
-
-    video.pause();
-    if (recorder && recorder.state !== 'inactive') recorder.stop();
-  });
-
-  btnReplay.addEventListener('click', async () => {
-    if (!takeUrl) return;
-
-    // 成品回放：影片靜音 + 播錄音，同步從 0 秒開始
-    video.muted = true;
-    video.currentTime = 0;
-    take.currentTime = 0;
-
-    setStatus('回放成品中…');
-
-    // 盡量同時開始
-    await Promise.allSettled([video.play(), take.play()]);
-
-    // 回放結束時狀態復原
-    const end = () => setStatus('回放結束，可重錄或再回放');
-    video.onended = end;
-    take.onended = end;
-  });
+  // 初次渲染
+  setActive(0);
+  render();
 })();
 </script>
 </body>
