@@ -280,33 +280,65 @@
   };
 
   const recordLine = async (i) => {
-    const line = lines[i];
-    if (line.skip) return;
+  const line = lines[i];
+  if (line.skip) return;
 
-    setActive(i);
-    setStatus(`準備第 ${i+1} 句…`);
+  setActive(i);
+  setStatus(`準備第 ${i+1} 句…`);
 
-    // 先停止示範（避免兩個音源同時出聲）
-    demoPlayer.pause();
-    demoPlayer.currentTime = 0;
+  // ✅ B模式：錄音時永遠安靜（全部音源先停掉）
+  demoPlayer.pause();
+  demoPlayer.currentTime = 0;
 
-    // 1) 跳到該句開始
-    await seekTo(video, line.start);
+  preview.pause();
+  preview.currentTime = 0;
 
-    // 2) 設定錄音器
-    const mimeType = pickMime();
-    const recorder = new MediaRecorder(micStream, mimeType ? { mimeType } : undefined);
-    const chunks = [];
+  video.pause();
+  video.muted = true; // ★重點：錄音期間影片永遠靜音
 
-    // 3) 錄音時影片原音是否播放
-    video.muted = !chkHearVideo.checked;
+  // 1) 跳到該句開始
+  await seekTo(video, line.start);
 
-    // 4) 盯影片時間，到 end 自動停
-    const stopAtEnd = () => {
-      video.pause();
-      cleanup();
-      if (recorder.state !== 'inactive') recorder.stop();
-    };
+  // 2) 設定錄音器
+  const mimeType = pickMime();
+  const recorder = new MediaRecorder(micStream, mimeType ? { mimeType } : undefined);
+  const chunks = [];
+
+  // 3) 盯影片時間，到 end 自動停
+  const stopAtEnd = () => {
+    video.pause();
+    cleanup();
+    if (recorder.state !== 'inactive') recorder.stop();
+  };
+  const onTime = () => {
+    if (video.currentTime >= line.end) stopAtEnd();
+  };
+  const cleanup = () => {
+    video.removeEventListener('timeupdate', onTime);
+    video.removeEventListener('ended', stopAtEnd);
+  };
+
+  recorder.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+
+  recorder.onstop = () => {
+    const blob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
+    recordings[i] = blob;
+
+    setStatus(`第 ${i+1} 句錄完 ✅`);
+    render();
+
+    if (chkAutoNext.checked) setActive(i + 1);
+  };
+
+  // 4) 開始播放（但靜音）+ 開始錄音
+  video.addEventListener('timeupdate', onTime);
+  video.addEventListener('ended', stopAtEnd);
+
+  recorder.start();
+  setStatus(`錄音中：第 ${i+1} 句…（靜音）`);
+  await video.play().catch(()=>{});
+};
+
     const onTime = () => {
       if (video.currentTime >= line.end) stopAtEnd();
     };
