@@ -341,25 +341,28 @@ const setActive = (i, { scroll = true } = {}) => {
   };
 
 const replayAll = async () => {
-    setStatus('回放中（影片流暢＋超時截斷）…');
+    setStatus('回放中（iOS 優化模式）…');
     demoPlayer.pause();
     
-    // 1. 初始化
+    // 1. 暫時移除控制列 (關鍵！防止 iPhone 跳出原生播放暫停遮罩)
+    video.removeAttribute('controls');
+    
     video.muted = true;
     video.currentTime = 0;
+    
+    // 讓畫面平滑捲動到影片區
     video.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-    let nextIndex = 0;       // 下一句要播的是誰
-    let currentAudio = null; // 記錄目前正在播的聲音物件
+    let nextIndex = 0;
+    let currentAudio = null;
 
     const onTimeUpdate = () => {
       const t = video.currentTime;
 
-      // --- A. 檢查是否要「開始」播下一句 ---
-      // 確保還有下一句，且時間到了 start
+      // --- A. 播放下一句 ---
       if (nextIndex < lines.length && t >= lines[nextIndex].start) {
         
-        // 1. 如果上一句還沒播完（聲音還在響），強制切掉！(避免重疊)
+        // 切斷上一句聲音
         if (currentAudio) {
           currentAudio.pause();
           currentAudio = null;
@@ -367,33 +370,29 @@ const replayAll = async () => {
 
         const line = lines[nextIndex];
 
-        // 2. 只有「沒略過」且「有錄音」才播
         if (!line.skip && recordings[nextIndex]) {
-          setActive(nextIndex, { scroll: false }); // 亮顯但不捲動
+          setActive(nextIndex, { scroll: false });
 
           const url = URL.createObjectURL(recordings[nextIndex]);
           currentAudio = new Audio(url);
-          currentAudio.play().catch(() => {});
           
-          // 若聲音自然播完，清空參照
+          // iOS 技巧：有時候建立 Audio 需要明確指定 playsInline 或載入
+          currentAudio.play().catch((e) => {
+            console.log('Audio autoplay blocked?', e);
+          });
+          
           currentAudio.onended = () => { currentAudio = null; };
         }
-
-        nextIndex++; // 指標移向下一句
+        nextIndex++;
       }
 
-      // --- B. 檢查是否要「截斷」目前這句 (超時保護) ---
-      // 我們檢查「剛播過的那一句」(nextIndex - 1)
+      // --- B. 超時截斷 ---
       const playingIndex = nextIndex - 1;
-      
       if (playingIndex >= 0 && currentAudio) {
         const playingLine = lines[playingIndex];
-        
-        // 如果影片時間已經超過這句的 end，且聲音還在播 -> 強制截斷
         if (t >= playingLine.end) {
           currentAudio.pause();
           currentAudio = null;
-          // console.log(`第 ${playingIndex+1} 句超時，已截斷`);
         }
       }
     };
@@ -401,11 +400,16 @@ const replayAll = async () => {
     const cleanup = () => {
       video.removeEventListener('timeupdate', onTimeUpdate);
       video.removeEventListener('ended', cleanup);
-      // 停止任何殘留的聲音
+      
+      // 停止聲音
       if (currentAudio) {
         currentAudio.pause();
         currentAudio = null;
       }
+      
+      // 2. 回放結束後，把控制列加回去，讓使用者可以自己拉進度條
+      video.setAttribute('controls', '');
+      
       if (video.ended) setStatus('回放結束');
     };
 
@@ -415,7 +419,9 @@ const replayAll = async () => {
     try {
       await video.play();
     } catch (err) {
-      alert('播放失敗，請先與頁面互動');
+      alert('播放失敗，iOS 需要您先點擊畫面');
+      // 如果失敗也要把 controls 加回去，不然使用者會壞掉
+      video.setAttribute('controls', '');
     }
   };
   const clearAll = () => {
