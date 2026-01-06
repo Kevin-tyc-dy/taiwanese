@@ -111,10 +111,42 @@
     .hint { color:#777; font-size: 13px; line-height: 1.4; }
 
     /* 手機模式 */
+/* 平板直式與手機模式修正 */
     @media (max-width: 900px) {
-      .main-container { flex-direction: column; overflow: visible; }
-      .control-section { height: auto; }
-      .script-list { height: 400px; }
+      body {
+        /* 取消強制 100vh，讓頁面可以自然捲動 */
+        height: auto; 
+        overflow-y: auto;
+      }
+
+      .main-container {
+        flex-direction: column;
+        overflow: visible;
+        padding-bottom: 30px; /* 底部留點空間 */
+      }
+
+      /* 重點修正：影片區塊不要自動拉伸，高度由內容決定 */
+      .video-section {
+        flex: none; 
+        width: 100%;
+      }
+
+      /* 讓影片填滿寬度 */
+      video {
+        width: 100%;
+        height: auto;
+      }
+
+      .control-section {
+        height: auto;
+        flex: none; /* 控制區也不要強制拉伸，自然呈現 */
+      }
+
+      /* 調整劇本列表的高度，避免太短或太長 */
+      .script-list {
+        height: 50vh; /* 讓劇本列表佔螢幕一半高度，方便捲動 */
+        max-height: 500px;
+      }
     }
   </style>
 </head>
@@ -124,7 +156,7 @@
 
   <div class="main-container">
     <div class="video-section">
-      <video id="video" src="video.mp4" controls playsinline preload="metadata"></video>
+      <video id="video" src="https://drive.google.com/file/d/14lv5lV6Mbzw1mo9j8kwHY5ct3GbMSM9d/video.mp4" controls playsinline preload="metadata"></video>
       <div style="padding: 15px; background: #fff; border-radius: 8px;">
         <p class="hint" style="margin:0;"><strong>💡 操作小叮嚀：</strong><br>
         • 先按「允許麥克風」才能開始錄音。<br>
