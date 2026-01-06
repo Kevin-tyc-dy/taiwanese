@@ -167,6 +167,8 @@
 
 <script>
 const singlePlayer = new Audio();
+// 用來記錄目前正在運作的「示範停止監聽器」，方便切換時移除
+let currentDemoHandler = null;
 (() => {
   const video = document.getElementById('video');
   const btnInit = document.getElementById('btnInit');
@@ -240,17 +242,47 @@ const singlePlayer = new Audio();
     }
   };
 
-  const playDemo = async (i) => {
+const playDemo = async (i) => {
     setActive(i, { scroll: false });
-    // 檢查是否要同步跳轉畫面
-    if (chkDemoSeek.checked) {
-      video.pause();
-      await seekTo(video, lines[i].start);
+    const line = lines[i];
+
+    // 1. 如果之前有正在跑的監聽器，先移除掉，避免干擾
+    if (currentDemoHandler) {
+      video.removeEventListener('timeupdate', currentDemoHandler);
+      currentDemoHandler = null;
     }
+
+    // 2. 準備播放示範音檔
     preview.pause();
     demoPlayer.src = `sample/sample${String(i + 1).padStart(2, '0')}.m4a`;
-    demoPlayer.play().catch(()=>{});
-    setStatus(`播放示範：第 ${i+1} 句`);
+
+    // 3. 處理影片播放邏輯
+    if (chkDemoSeek.checked) {
+      video.muted = true; // 聽示範時，建議把影片原聲靜音，才聽得清楚示範音
+      video.currentTime = line.start;
+
+      // 定義：時間到了要做什麼 (暫停 + 移除監聽)
+      currentDemoHandler = () => {
+        if (video.currentTime >= line.end) {
+          video.pause();
+          video.removeEventListener('timeupdate', currentDemoHandler);
+          currentDemoHandler = null;
+        }
+      };
+
+      // 掛上監聽器並開始播放影片
+      video.addEventListener('timeupdate', currentDemoHandler);
+      video.play().catch((e) => console.log("影片播放被阻擋或失敗", e));
+    }
+
+    // 4. 播放示範聲音
+    try {
+      await demoPlayer.play();
+    } catch (e) {
+      console.log("音檔播放失敗", e);
+    }
+
+    setStatus(`播放示範：第 ${i + 1} 句`);
   };
 
   const recordLine = async (i) => {
