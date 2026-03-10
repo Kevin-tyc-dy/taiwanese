@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>臺灣客語練習帖</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500&family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1208;
+    --paper: #f5efe3;
+    --rice: #faf6ee;
+    --aged: #e8dcc8;
+    --red: #c0392b;
+    --gold: #b5860d;
+    --brush: #2c1810;
+    --seal: #9b1b1b;
+    --shadow: rgba(26,18,8,0.12);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--paper);
+    font-family: 'Noto Serif TC', serif;
+    color: var(--ink);
+    min-height: 100vh;
+    overflow-x: hidden;
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(180,160,120,0.08) 39px, rgba(180,160,120,0.08) 40px),
+      repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(180,160,120,0.06) 39px, rgba(180,160,120,0.06) 40px);
+  }
+
+  /* Paper texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 20px 16px 40px;
+  }
+
+  /* Header */
+  header {
+    text-align: center;
+    padding: 28px 0 20px;
+    border-bottom: 2px solid var(--gold);
+    margin-bottom: 24px;
+    position: relative;
+  }
+  header::after {
+    content: '';
+    display: block;
+    width: 60%;
+    height: 1px;
+    background: var(--gold);
+    margin: 6px auto 0;
+    opacity: 0.4;
+  }
+
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 4px;
+  }
+
+  .seal {
+    width: 48px;
+    height: 48px;
+    background: var(--seal);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Ma Shan Zheng', serif;
+    font-size: 18px;
+    writing-mode: vertical-rl;
+    letter-spacing: 2px;
+    flex-shrink: 0;
+    box-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+  }
+
+  h1 {
+    font-family: 'Ma Shan Zheng', serif;
+    font-size: clamp(24px, 5vw, 40px);
+    font-weight: 400;
+    color: var(--brush);
+    letter-spacing: 0.1em;
+    line-height: 1.2;
+  }
+
+  .subtitle {
+    font-size: 13px;
+    color: var(--gold);
+    letter-spacing: 0.2em;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-weight: 300;
+    margin-top: 4px;
+  }
+
+  /* Controls */
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    padding: 16px;
+    background: var(--rice);
+    border: 1px solid var(--aged);
+    box-shadow: inset 0 1px 3px var(--shadow);
+  }
+
+  .ctrl-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .ctrl-label {
+    font-size: 13px;
+    color: var(--gold);
+    letter-spacing: 0.1em;
+    font-family: 'Noto Sans TC', sans-serif;
+    white-space: nowrap;
+  }
+
+  .btn-group {
+    display: flex;
+    gap: 0;
+    border: 1px solid var(--gold);
+    overflow: hidden;
+  }
+
+  .btn-toggle {
+    padding: 6px 14px;
+    font-size: 13px;
+    font-family: 'Noto Serif TC', serif;
+    background: transparent;
+    color: var(--gold);
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.05em;
+  }
+  .btn-toggle + .btn-toggle {
+    border-left: 1px solid var(--gold);
+  }
+  .btn-toggle.active {
+    background: var(--gold);
+    color: var(--rice);
+  }
+  .btn-toggle:hover:not(.active) {
+    background: rgba(181,134,13,0.1);
+  }
+
+  .btn-action {
+    padding: 7px 18px;
+    font-size: 13px;
+    font-family: 'Noto Serif TC', serif;
+    background: var(--brush);
+    color: var(--aged);
+    border: none;
+    cursor: pointer;
+    letter-spacing: 0.1em;
+    transition: all 0.2s;
+    box-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+  }
+  .btn-action:hover {
+    background: var(--ink);
+    transform: translate(-1px,-1px);
+    box-shadow: 3px 3px 0 rgba(0,0,0,0.25);
+  }
+  .btn-action:active {
+    transform: translate(1px,1px);
+    box-shadow: 1px 1px 0 rgba(0,0,0,0.2);
+  }
+
+  /* Progress */
+  .progress-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .progress-bar {
+    flex: 1;
+    height: 4px;
+    background: var(--aged);
+    position: relative;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--gold);
+    transition: width 0.4s ease;
+  }
+  .progress-text {
+    font-size: 12px;
+    color: var(--gold);
+    font-family: 'Noto Sans TC', sans-serif;
+    white-space: nowrap;
+    min-width: 64px;
+    text-align: right;
+  }
+
+  /* Main card */
+  .card {
+    background: var(--rice);
+    border: 1px solid var(--aged);
+    box-shadow: 4px 4px 0 var(--aged), 0 2px 16px var(--shadow);
+    padding: 32px 28px 28px;
+    margin-bottom: 20px;
+    position: relative;
+    min-height: 180px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 8px; left: 8px; right: -8px; bottom: -8px;
+    border: 1px solid var(--aged);
+    z-index: -1;
+    opacity: 0.5;
+  }
+
+  .question-type {
+    position: absolute;
+    top: 12px;
+    left: 16px;
+    font-size: 11px;
+    color: var(--gold);
+    font-family: 'Noto Sans TC', sans-serif;
+    letter-spacing: 0.15em;
+    opacity: 0.8;
+  }
+
+  .question-num {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    font-size: 11px;
+    color: var(--gold);
+    font-family: 'Noto Sans TC', sans-serif;
+    letter-spacing: 0.1em;
+  }
+
+  .question-main {
+    text-align: center;
+    padding: 8px 0;
+  }
+
+  .question-hint {
+    font-size: 13px;
+    color: rgba(26,18,8,0.45);
+    font-family: 'Noto Sans TC', sans-serif;
+    margin-bottom: 10px;
+    letter-spacing: 0.1em;
+  }
+
+  .question-text {
+    font-family: 'Noto Serif TC', serif;
+    font-size: clamp(28px, 7vw, 52px);
+    font-weight: 600;
+    color: var(--brush);
+    line-height: 1.3;
+    letter-spacing: 0.1em;
+  }
+
+  .question-text .target {
+    color: var(--red);
+    border-bottom: 3px solid var(--red);
+    padding-bottom: 2px;
+  }
+
+  .question-sub {
+    font-size: clamp(14px, 3vw, 20px);
+    color: rgba(26,18,8,0.5);
+    margin-top: 6px;
+    letter-spacing: 0.15em;
+    font-family: 'Noto Sans TC', sans-serif;
+  }
+
+  /* Answer reveal */
+  .answer-section {
+    background: rgba(181,134,13,0.06);
+    border: 1px dashed var(--gold);
+    padding: 14px 20px;
+    text-align: center;
+    margin-bottom: 16px;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+    position: relative;
+  }
+
+  .answer-hidden {
+    font-size: 13px;
+    color: rgba(26,18,8,0.35);
+    letter-spacing: 0.2em;
+    font-family: 'Noto Sans TC', sans-serif;
+  }
+
+  .answer-revealed {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .answer-label {
+    font-size: 11px;
+    color: var(--seal);
+    letter-spacing: 0.2em;
+    font-family: 'Noto Sans TC', sans-serif;
+  }
+
+  .answer-value {
+    font-family: 'Noto Serif TC', serif;
+    font-size: clamp(22px, 5vw, 36px);
+    font-weight: 700;
+    color: var(--seal);
+    letter-spacing: 0.15em;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Canvas whiteboard */
+  .whiteboard-wrap {
+    margin-bottom: 16px;
+    position: relative;
+  }
+
+  .wb-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--aged);
+    border: 1px solid rgba(181,134,13,0.4);
+    border-bottom: none;
+  }
+
+  .wb-label {
+    font-size: 11px;
+    color: var(--gold);
+    letter-spacing: 0.15em;
+    font-family: 'Noto Sans TC', sans-serif;
+    flex: 1;
+  }
+
+  .wb-tool {
+    width: 28px;
+    height: 28px;
+    border: 1px solid rgba(26,18,8,0.2);
+    background: var(--rice);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    transition: all 0.15s;
+    color: var(--brush);
+  }
+  .wb-tool:hover { background: var(--paper); }
+  .wb-tool.active {
+    background: var(--brush);
+    color: var(--rice);
+    border-color: var(--brush);
+  }
+
+  .size-dot {
+    border-radius: 50%;
+    background: var(--brush);
+    pointer-events: none;
+  }
+
+  .color-swatch {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .color-swatch:hover, .color-swatch.active { transform: scale(1.25); border-color: var(--brush); }
+
+  canvas#wb {
+    display: block;
+    width: 100%;
+    height: 240px;
+    background: #fff;
+    border: 1px solid rgba(181,134,13,0.3);
+    cursor: crosshair;
+    touch-action: none;
+  }
+
+  /* Action buttons row */
+  .action-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .btn-reveal {
+    padding: 10px 28px;
+    font-family: 'Noto Serif TC', serif;
+    font-size: 15px;
+    background: var(--seal);
+    color: var(--rice);
+    border: none;
+    cursor: pointer;
+    letter-spacing: 0.15em;
+    box-shadow: 3px 3px 0 rgba(0,0,0,0.25);
+    transition: all 0.2s;
+    flex: 1;
+    max-width: 200px;
+  }
+  .btn-reveal:hover {
+    background: var(--red);
+    transform: translate(-1px,-1px);
+    box-shadow: 4px 4px 0 rgba(0,0,0,0.25);
+  }
+  .btn-reveal:active {
+    transform: translate(1px,1px);
+    box-shadow: 1px 1px 0 rgba(0,0,0,0.2);
+  }
+
+  .btn-next {
+    padding: 10px 28px;
+    font-family: 'Noto Serif TC', serif;
+    font-size: 15px;
+    background: var(--brush);
+    color: var(--aged);
+    border: none;
+    cursor: pointer;
+    letter-spacing: 0.15em;
+    box-shadow: 3px 3px 0 rgba(0,0,0,0.2);
+    transition: all 0.2s;
+    flex: 1;
+    max-width: 200px;
+  }
+  .btn-next:hover {
+    background: var(--ink);
+    transform: translate(-1px,-1px);
+    box-shadow: 4px 4px 0 rgba(0,0,0,0.25);
+  }
+  .btn-next:active {
+    transform: translate(1px,1px);
+  }
+
+  .btn-clear-wb {
+    padding: 10px 16px;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 13px;
+    background: transparent;
+    color: rgba(26,18,8,0.5);
+    border: 1px solid var(--aged);
+    cursor: pointer;
+    letter-spacing: 0.1em;
+    transition: all 0.2s;
+  }
+  .btn-clear-wb:hover {
+    border-color: var(--brush);
+    color: var(--brush);
+  }
+
+  /* Section tabs */
+  .section-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 16px;
+    border-bottom: 2px solid var(--gold);
+  }
+
+  .section-tab {
+    padding: 8px 20px;
+    font-size: 13px;
+    font-family: 'Noto Serif TC', serif;
+    background: transparent;
+    color: rgba(26,18,8,0.5);
+    border: 1px solid var(--aged);
+    border-bottom: none;
+    cursor: pointer;
+    margin-right: 4px;
+    letter-spacing: 0.1em;
+    transition: all 0.2s;
+    position: relative;
+    bottom: -2px;
+  }
+  .section-tab.active {
+    background: var(--rice);
+    color: var(--brush);
+    border-color: var(--gold);
+    border-bottom: 2px solid var(--rice);
+    font-weight: 600;
+  }
+
+  /* Responsive */
+  @media (max-width: 540px) {
+    .ctrl-group { flex-wrap: wrap; justify-content: center; }
+    .controls { padding: 12px 10px; }
+    .card { padding: 24px 16px 20px; }
+    canvas#wb { height: 180px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <header>
+    <div class="header-top">
+      <div class="seal">客語</div>
+      <h1>臺灣客語練習帖</h1>
+      <div class="seal">四縣</div>
+    </div>
+    <div class="subtitle">114年全國語文競賽・字音字形・四縣腔教師社會組</div>
+  </header>
+
+  <!-- Section tabs -->
+  <div class="section-tabs">
+    <button class="section-tab active" id="tab1" onclick="switchSection(1)">一、漢字寫拼音（100題）</button>
+    <button class="section-tab" id="tab2" onclick="switchSection(2)">二、拼音寫漢字（100題）</button>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <div class="ctrl-group">
+      <span class="ctrl-label">出題方式</span>
+      <div class="btn-group">
+        <button class="btn-toggle active" id="btnSeq" onclick="setMode('seq')">依序</button>
+        <button class="btn-toggle" id="btnRand" onclick="setMode('rand')">隨機</button>
+      </div>
+    </div>
+    <div class="ctrl-group">
+      <button class="btn-action" onclick="restartQuiz()">↺ 重新開始</button>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-bar-wrap">
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill" style="width:0%"></div>
+    </div>
+    <div class="progress-text" id="progressText">0 / 100</div>
+  </div>
+
+  <!-- Question Card -->
+  <div class="card">
+    <div class="question-type" id="questionType">漢字→拼音</div>
+    <div class="question-num" id="questionNum">第 1 題</div>
+    <div class="question-main" id="questionMain">
+      <div class="question-hint" id="questionHint">請寫出「」內之拼音</div>
+      <div class="question-text" id="questionText">—</div>
+    </div>
+  </div>
+
+  <!-- Answer -->
+  <div class="answer-section" id="answerSection">
+    <div class="answer-hidden" id="answerHidden">按下「顯示答案」查看</div>
+    <div class="answer-revealed" id="answerRevealed">
+      <div class="answer-label">正確答案</div>
+      <div class="answer-value" id="answerValue">—</div>
+    </div>
+  </div>
+
+  <!-- Whiteboard -->
+  <div class="whiteboard-wrap">
+    <div class="wb-toolbar">
+      <span class="wb-label">✏ 書寫板（支援 Apple Pencil）</span>
+      <!-- Pen sizes -->
+      <div class="wb-tool active" id="sizeS" onclick="setSize(2)" title="細筆">
+        <div class="size-dot" style="width:4px;height:4px"></div>
+      </div>
+      <div class="wb-tool" id="sizeM" onclick="setSize(5)" title="中筆">
+        <div class="size-dot" style="width:8px;height:8px"></div>
+      </div>
+      <div class="wb-tool" id="sizeL" onclick="setSize(10)" title="粗筆">
+        <div class="size-dot" style="width:14px;height:14px"></div>
+      </div>
+      <!-- Colors -->
+      <div class="color-swatch active" id="colorBlack" style="background:#1a1208" onclick="setColor('#1a1208')" title="墨黑"></div>
+      <div class="color-swatch" id="colorRed" style="background:#c0392b" onclick="setColor('#c0392b')" title="硃紅"></div>
+      <div class="color-swatch" id="colorBlue" style="background:#1a4a8a" onclick="setColor('#1a4a8a')" title="靛藍"></div>
+      <!-- Eraser -->
+      <div class="wb-tool" id="eraserBtn" onclick="toggleEraser()" title="橡皮擦">⌫</div>
+    </div>
+    <canvas id="wb"></canvas>
+  </div>
+
+  <!-- Actions -->
+  <div class="action-row">
+    <button class="btn-clear-wb" onclick="clearCanvas()">清除書寫板</button>
+    <button class="btn-reveal" id="btnReveal" onclick="revealAnswer()">顯示答案</button>
+    <button class="btn-next" onclick="nextQuestion()">下一題 →</button>
+  </div>
+
+</div>
+
+<script>
+// ==================== DATA ====================
+const section1 = [
+  {q:'「唆」慫', a:'soˊ'},
+  {q:'倉「頡」', a:'giedˋ'},
+  {q:'「拌」楻', a:'panˊ'},
+  {q:'重「複」', a:'fug'},
+  {q:'「深」淺', a:'ciimˊ'},
+  {q:'腦「囟」', a:'xin'},
+  {q:'「賜」教', a:'su'},
+  {q:'「緒」論', a:'xi'},
+  {q:'線「索」', a:'sogˋ'},
+  {q:'「續」手', a:'sa'},
+  {q:'「辯」論', a:'pien'},
+  {q:'一「坎」店', a:'kamˋ'},
+  {q:'「翰」墨', a:'hon'},
+  {q:'「潤」喉', a:'iun'},
+  {q:'「篆」字', a:'con'},
+  {q:'針「灸」', a:'giu/giuˋ'},
+  {q:'「祝」壽', a:'zugˋ'},
+  {q:'「糶」穀', a:'tiau'},
+  {q:'「勾」結', a:'gieuˊ'},
+  {q:'防空「壕」', a:'hoˇ'},
+  {q:'細「菌」', a:'kiunˇ'},
+  {q:'「涵」養', a:'hamˇ'},
+  {q:'「獵」狗', a:'liab'},
+  {q:'鬞頭絞「髻」', a:'gi'},
+  {q:'「釅」茶', a:'ngiamˇ'},
+  {q:'壁「竳」', a:'denˇ'},
+  {q:'「匉」開來', a:'pangˊ'},
+  {q:'毛「毯」', a:'tanˋ'},
+  {q:'「攎」衫袖', a:'luˇ'},
+  {q:'罪「孽」', a:'ngiedˋ'},
+  {q:'「賒」欠', a:'caˊ'},
+  {q:'「綯」牛仔', a:'toˇ'},
+  {q:'「忌」中', a:'ki'},
+  {q:'「孺」人', a:'iˇ'},
+  {q:'毋「揈」人', a:'fenˊ'},
+  {q:'紅「麴」', a:'kiugˋ'},
+  {q:'聯「盟」', a:'menˇ'},
+  {q:'退「讓」', a:'ngiong'},
+  {q:'臭「羴」', a:'hien'},
+  {q:'「繅」絲', a:'sauˊ'},
+  {q:'締「結」', a:'giedˋ'},
+  {q:'狗拖「犁」', a:'laiˇ'},
+  {q:'黃「耆」', a:'kiˇ'},
+  {q:'「焙」熟', a:'poi'},
+  {q:'「刻」耐仔', a:'kadˋ'},
+  {q:'「熰」火', a:'eu'},
+  {q:'「責」罰', a:'jidˋ'},
+  {q:'「托」盤', a:'togˋ'},
+  {q:'「藐」視', a:'meuˋ'},
+  {q:'「筋」頭', a:'ginˊ'},
+  {q:'「枵」鬼', a:'iauˊ'},
+  {q:'神「龕」', a:'kamˊ'},
+  {q:'「褫」奪公權', a:'ciiˋ'},
+  {q:'賄「賂」', a:'lu'},
+  {q:'「爵」位', a:'jiogˋ'},
+  {q:'大水「樵」', a:'ceuˇ'},
+  {q:'「輻」射', a:'fugˋ'},
+  {q:'地「獄」', a:'ngiug'},
+  {q:'出門「懺」', a:'cam'},
+  {q:'「鈍」市', a:'tun'},
+  {q:'「震」動', a:'ziinˋ'},
+  {q:'禽「獸」', a:'cu'},
+  {q:'「抨」擊', a:'piangˊ'},
+  {q:'「舢」板', a:'sanˊ'},
+  {q:'感「慨」', a:'koiˋ'},
+  {q:'「哱」波', a:'bud'},
+  {q:'副「作」用', a:'zogˋ'},
+  {q:'「篡」位', a:'con'},
+  {q:'樓「閣」', a:'gogˋ'},
+  {q:'幼學「瓊」林', a:'kiunˇ'},
+  {q:'「趖」來趖去', a:'soˇ'},
+  {q:'「撙」開', a:'zunˋ'},
+  {q:'一「匹」布', a:'pidˋ'},
+  {q:'苦「篤」篤仔', a:'dugˋ'},
+  {q:'菩「薩」', a:'sadˋ'},
+  {q:'「㧾」人', a:'fud'},
+  {q:'「衙」門', a:'ngaˇ'},
+  {q:'「硼」砂', a:'pinˇ'},
+  {q:'「穩」睡', a:'vunˋ'},
+  {q:'相「賽」', a:'coi'},
+  {q:'「弘」揚', a:'fenˇ'},
+  {q:'「豁」免', a:'vogˋ'},
+  {q:'「殿」軍', a:'tien'},
+  {q:'「敵」人', a:'tid'},
+  {q:'「嗀」出來', a:'og'},
+  {q:'螺「螷」仔', a:'beˊ'},
+  {q:'豬「籠」', a:'lungˊ'},
+  {q:'一「尋」長', a:'kimˇ'},
+  {q:'「憾」事', a:'ham'},
+  {q:'「恐」嚇', a:'kiungˋ'},
+  {q:'荊「棘」', a:'gidˋ'},
+  {q:'矛「盾」', a:'tunˋ'},
+  {q:'「革」命', a:'giedˋ'},
+  {q:'國「產」', a:'sanˋ'},
+  {q:'「跁」跁走', a:'paˊ'},
+  {q:'「刓」斷', a:'nganˇ/nganˊ'},
+  {q:'「沾」水', a:'demˊ'},
+  {q:'「謄」本', a:'tenˇ'},
+  {q:'崎當「嶇」', a:'kiˊ'},
+  {q:'「喝」一聲', a:'hodˋ'},
+];
+
+const section2 = [
+  {q:'log「pagˋ」', a:'魄'},
+  {q:'「kiang」giogˋ', a:'慶'},
+  {q:'seuˇ loˇ bogˋ「gidˋ」', a:'激'},
+  {q:'gongˋ「giu」', a:'究'},
+  {q:'「bienˋ」qienˇ', a:'揙'},
+  {q:'「ceˇ」teuˇ', a:'齊'},
+  {q:'「jim」jiuˋ', a:'浸'},
+  {q:'「godˋ」fo', a:'割'},
+  {q:'「nonˊ」coi', a:'暖'},
+  {q:'「zan」ti naiˇ', a:'碾'},
+  {q:'bun「gau」', a:'窖'},
+  {q:'dai「kien」', a:'絭'},
+  {q:'「tin」funˊ', a:'定'},
+  {q:'hiˋ「guˋ」', a:'鼓'},
+  {q:'「pidˋ」xiaˇ', a:'避'},
+  {q:'paˇ congˇ iaˋ「qiag」', a:'蓆/席'},
+  {q:'「luˇ」manˇ teuˇ', a:'鱸'},
+  {q:'「giab」zoi', a:'唊'},
+  {q:'fa「ngienˋ」', a:'眼'},
+  {q:'giogˋ「giuˊ」giuˊ', a:'跔'},
+  {q:'aiˋ「dudˋ」dudˋ eˋ', a:'㑁'},
+  {q:'「zamˋ」qienˊ doˊ', a:'斬'},
+  {q:'kiaˊ「ngiaˋ」', a:'嶷'},
+  {q:'fan「ladˋ」', a:'𤊶'},
+  {q:'「biag」noˋ ginˊ', a:'噼'},
+  {q:'「xiogˋ」jiamˊ', a:'削'},
+  {q:'ngied「bi」eˋ', a:'痱'},
+  {q:'damˊ「ngang」', a:'硬'},
+  {q:'naiˇ「ngiugˋ」', a:'肉'},
+  {q:'suˋ「cung」', a:'銃'},
+  {q:'「xia」im', a:'卸'},
+  {q:'ho「teuˇ」', a:'頭'},
+  {q:'son mˇ「foˇ」', a:'和'},
+  {q:'kiung「deu」', a:'竇'},
+  {q:'「diamˊ」giogˋ', a:'砧'},
+  {q:'「qiongˋ」gongˊ gieuˋ', a:'搶'},
+  {q:'hi「hiamˇ」', a:'嫌'},
+  {q:'sanˊ fuˇ「kiˇ」', a:'蜞'},
+  {q:'「pinˊ」moˊ bienˊ eˋ', a:'拼'},
+  {q:'「gi」tonˊ', a:'鋸'},
+  {q:'「panˇ」suiˋ', a:'盤'},
+  {q:'「gongˇ」gong eˋ', a:'晃'},
+  {q:'「ngienˋ」ngaˇ gauˊ', a:'撚'},
+  {q:'koiˊ「pidˋ」', a:'闢'},
+  {q:'「ciiˇ」teuˇ lu', a:'辭'},
+  {q:'hiedˋ「kun」', a:'睏'},
+  {q:'「kag」naiˇ lonˋ', a:'揢'},
+  {q:'hiongˊ luˇ「ngiˋ」', a:'耳'},
+  {q:'bauˋ「zong」', a:'脹'},
+  {q:'「congˇ」ngienˇ teu tienˊ', a:'長'},
+  {q:'「giug」ximˊ sii', a:'挶'},
+  {q:'「zungˋ」coˋ', a:'種'},
+  {q:'「bongˋ」fan', a:'傍'},
+  {q:'「pad」lien', a:'䯋'},
+  {q:'「po」piang', a:'破'},
+  {q:'hiˋ「heuˇ」mien', a:'猴'},
+  {q:'aiˊ「lungˇ」', a:'礱'},
+  {q:'「dunˋ」teuˇ', a:'楯'},
+  {q:'「fu」suiˋ songˊ tienˊ', a:'戽'},
+  {q:'「am」son', a:'暗'},
+  {q:'「baiˊ」giogˋ', a:'跛'},
+  {q:'duˋ「co」fa', a:'造'},
+  {q:'「guˊ」log hi', a:'跍'},
+  {q:'「puˋ」mugˋ', a:'瞨'},
+  {q:'「kuanˋ」siidˋ', a:'款'},
+  {q:'deu「dabˋ」', a:'搭'},
+  {q:'「mog」gongˋ', a:'莫'},
+  {q:'「ieuˊ」naiˇ', a:'夭'},
+  {q:'「den」teuˇ', a:'凳'},
+  {q:'「zod」suiˋ', a:'嘬'},
+  {q:'「pong」congˇ', a:'膨'},
+  {q:'siid「zaiˊ」', a:'齋'},
+  {q:'giogˋ「biˋ」', a:'髀'},
+  {q:'lai「pu」', a:'孵'},
+  {q:'「namˋ」ieuˊ gauˊ eˋ', a:'揇'},
+  {q:'daˋ「fai」', a:'壞'},
+  {q:'「giu」ginˊ', a:'勼'},
+  {q:'「jiangˊ」ne ne eˋ', a:'靚'},
+  {q:'「tenˇ」zoi miˊ', a:'跈'},
+  {q:'「kamˊ」mˇ dedˋ', a:'堪'},
+  {q:'「fiˊ」fug', a:'恢'},
+  {q:'「sabˋ」mugˋ', a:'眨'},
+  {q:'teuˇ「ngo」ngo eˋ', a:'臥'},
+  {q:'「ziin」siinˊ', a:'正'},
+  {q:'hi「magˋ」', a:'脈'},
+  {q:'suˊ「tiamˋ」tiamˋ', a:'悿'},
+  {q:'coˋ「piangˇ」', a:'坪'},
+  {q:'「qiab」bo', a:'捷'},
+  {q:'zo「damˋ」', a:'膽'},
+  {q:'kieu「abˋ」', a:'押'},
+  {q:'「hibˋ」coi', a:'熻'},
+  {q:'「kia」baˋ', a:'祛'},
+  {q:'「panˇ」sag', a:'磐'},
+  {q:'「xiangˋ」soi', a:'醒'},
+  {q:'「kieu」teuˇ', a:'翹/叩'},
+  {q:'「pa」mienˊ', a:'罷'},
+  {q:'「kud」naiˇ', a:'掘'},
+  {q:'jinˊ「giogˋ」', a:'腳'},
+  {q:'「manˇ」piˇ', a:'蠻'},
+  {q:'「za」dienˊ', a:'詐'},
+];
+
+// ==================== STATE ====================
+let currentSection = 1;
+let mode = 'seq';
+let currentData = [...section1];
+let order = [];
+let idx = 0;
+let answered = false;
+
+function buildOrder(len) {
+  order = Array.from({length: len}, (_,i) => i);
+  if (mode === 'rand') {
+    for (let i = len-1; i > 0; i--) {
+      const j = Math.floor(Math.random()*(i+1));
+      [order[i],order[j]] = [order[j],order[i]];
+    }
+  }
+}
+
+function switchSection(n) {
+  currentSection = n;
+  document.getElementById('tab1').classList.toggle('active', n===1);
+  document.getElementById('tab2').classList.toggle('active', n===2);
+  currentData = n===1 ? [...section1] : [...section2];
+  restartQuiz();
+}
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('btnSeq').classList.toggle('active', m==='seq');
+  document.getElementById('btnRand').classList.toggle('active', m==='rand');
+  restartQuiz();
+}
+
+function restartQuiz() {
+  idx = 0;
+  buildOrder(currentData.length);
+  showQuestion();
+}
+
+function getTargetWord(q) {
+  // Extract 「」content
+  const m = q.match(/「([^」]+)」/);
+  if (!m) return {display: q, target: ''};
+  const target = m[1];
+  const display = q.replace('「'+target+'」', '<span class="target">'+target+'</span>');
+  return {display, target};
+}
+
+function showQuestion() {
+  answered = false;
+  hideAnswer();
+  clearCanvas();
+
+  const item = currentData[order[idx]];
+  const total = currentData.length;
+
+  // Progress
+  const pct = Math.round((idx/total)*100);
+  document.getElementById('progressFill').style.width = pct+'%';
+  document.getElementById('progressText').textContent = (idx+1)+' / '+total;
+
+  // Type label
+  const typeLabel = currentSection === 1 ? '漢字→拼音' : '拼音→漢字';
+  document.getElementById('questionType').textContent = typeLabel;
+  document.getElementById('questionNum').textContent = '第 '+(order[idx]+1)+' 題';
+
+  const hint = currentSection === 1 ? '請寫出「　」內之客語拼音' : '請寫出「　」內對應之客語漢字';
+  document.getElementById('questionHint').textContent = hint;
+
+  // Render question
+  const {display, target} = getTargetWord(item.q);
+  // Remove 「」 and add color
+  const cleaned = item.q.replace('「','').replace('」','');
+
+  if (currentSection === 1) {
+    // Show hanzi, target in red
+    document.getElementById('questionText').innerHTML = display;
+  } else {
+    // Show pinyin, target in red
+    document.getElementById('questionText').innerHTML = display;
+  }
+}
+
+function revealAnswer() {
+  if (answered) return;
+  answered = true;
+  const item = currentData[order[idx]];
+  document.getElementById('answerValue').textContent = item.a;
+  document.getElementById('answerHidden').style.display = 'none';
+  const rev = document.getElementById('answerRevealed');
+  rev.style.display = 'flex';
+  document.getElementById('answerSection').style.background = 'rgba(155,27,27,0.05)';
+  document.getElementById('answerSection').style.borderColor = 'var(--seal)';
+}
+
+function hideAnswer() {
+  document.getElementById('answerHidden').style.display = '';
+  const rev = document.getElementById('answerRevealed');
+  rev.style.display = 'none';
+  document.getElementById('answerSection').style.background = '';
+  document.getElementById('answerSection').style.borderColor = '';
+}
+
+function nextQuestion() {
+  if (idx < currentData.length - 1) {
+    idx++;
+    showQuestion();
+  } else {
+    // End
+    document.getElementById('questionMain').innerHTML = '<div class="question-text" style="font-size:32px">🎉 全部完成！</div><div class="question-sub">共 '+currentData.length+' 題作答完畢</div>';
+    document.getElementById('questionType').textContent = '完成';
+    document.getElementById('progressFill').style.width = '100%';
+    document.getElementById('progressText').textContent = currentData.length+' / '+currentData.length;
+    hideAnswer();
+  }
+}
+
+// ==================== CANVAS ====================
+const canvas = document.getElementById('wb');
+const ctx = canvas.getContext('2d');
+let painting = false;
+let lastX = 0, lastY = 0;
+let penSize = 2;
+let penColor = '#1a1208';
+let isEraser = false;
+
+function resizeCanvas() {
+  const w = canvas.offsetWidth;
+  const h = canvas.offsetHeight;
+  const imageData = ctx.getImageData(0,0,canvas.width,canvas.height);
+  canvas.width = w * window.devicePixelRatio;
+  canvas.height = h * window.devicePixelRatio;
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0,0,w,h);
+}
+
+function getPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.offsetWidth / canvas.offsetWidth;
+  if (e.touches) {
+    const t = e.touches[0];
+    return [(t.clientX - rect.left), (t.clientY - rect.top)];
+  }
+  return [e.clientX - rect.left, e.clientY - rect.top];
+}
+
+function startDraw(e) {
+  e.preventDefault();
+  painting = true;
+  const [x,y] = getPos(e);
+  lastX = x; lastY = y;
+  ctx.beginPath();
+  ctx.arc(x, y, (isEraser ? penSize*4 : penSize)/2, 0, Math.PI*2);
+  ctx.fillStyle = isEraser ? '#fff' : penColor;
+  ctx.fill();
+}
+
+function draw(e) {
+  e.preventDefault();
+  if (!painting) return;
+  const [x,y] = getPos(e);
+  ctx.beginPath();
+  ctx.moveTo(lastX, lastY);
+  ctx.lineTo(x, y);
+  ctx.strokeStyle = isEraser ? '#fff' : penColor;
+  ctx.lineWidth = isEraser ? penSize*8 : penSize;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+  lastX = x; lastY = y;
+}
+
+function endDraw(e) { painting = false; }
+
+canvas.addEventListener('mousedown', startDraw);
+canvas.addEventListener('mousemove', draw);
+canvas.addEventListener('mouseup', endDraw);
+canvas.addEventListener('mouseleave', endDraw);
+canvas.addEventListener('touchstart', startDraw, {passive:false});
+canvas.addEventListener('touchmove', draw, {passive:false});
+canvas.addEventListener('touchend', endDraw);
+
+function setSize(s) {
+  penSize = s;
+  isEraser = false;
+  document.getElementById('eraserBtn').classList.remove('active');
+  document.getElementById('sizeS').classList.toggle('active', s===2);
+  document.getElementById('sizeM').classList.toggle('active', s===5);
+  document.getElementById('sizeL').classList.toggle('active', s===10);
+}
+
+function setColor(c) {
+  penColor = c;
+  isEraser = false;
+  document.getElementById('eraserBtn').classList.remove('active');
+  document.querySelectorAll('.color-swatch').forEach(el => el.classList.remove('active'));
+  if (c==='#1a1208') document.getElementById('colorBlack').classList.add('active');
+  if (c==='#c0392b') document.getElementById('colorRed').classList.add('active');
+  if (c==='#1a4a8a') document.getElementById('colorBlue').classList.add('active');
+}
+
+function toggleEraser() {
+  isEraser = !isEraser;
+  document.getElementById('eraserBtn').classList.toggle('active', isEraser);
+  if (isEraser) {
+    document.getElementById('sizeS').classList.remove('active');
+    document.getElementById('sizeM').classList.remove('active');
+    document.getElementById('sizeL').classList.remove('active');
+  }
+  canvas.style.cursor = isEraser ? 'cell' : 'crosshair';
+}
+
+function clearCanvas() {
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
+}
+
+// ==================== INIT ====================
+window.addEventListener('resize', () => { resizeCanvas(); });
+resizeCanvas();
+restartQuiz();
+</script>
+</body>
+</html>
