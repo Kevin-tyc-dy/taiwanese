@@ -188,6 +188,209 @@
     box-shadow: 1px 1px 0 rgba(0,0,0,0.2);
   }
 
+  /* Timer */
+  .timer-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .timer-display {
+    font-family: 'Ma Shan Zheng', serif;
+    font-size: 22px;
+    color: var(--brush);
+    letter-spacing: 0.05em;
+    min-width: 58px;
+    text-align: center;
+    transition: color 0.3s;
+  }
+  .timer-display.urgent { color: var(--seal); animation: pulse 0.8s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.55} }
+  .timer-display.done { color: #888; }
+
+  .btn-timer {
+    padding: 5px 12px;
+    font-size: 13px;
+    font-family: 'Noto Sans TC', sans-serif;
+    background: transparent;
+    color: var(--gold);
+    border: 1px solid var(--gold);
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    transition: all 0.2s;
+  }
+  .btn-timer:hover { background: rgba(181,134,13,0.1); }
+  .btn-timer.running { color: var(--seal); border-color: var(--seal); }
+
+  /* Mark button on card */
+  .btn-mark {
+    position: absolute;
+    bottom: 12px;
+    right: 16px;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-family: 'Noto Sans TC', sans-serif;
+    background: transparent;
+    color: rgba(26,18,8,0.35);
+    border: 1px solid var(--aged);
+    cursor: pointer;
+    letter-spacing: 0.1em;
+    transition: all 0.2s;
+  }
+  .btn-mark:hover { border-color: var(--gold); color: var(--gold); }
+  .btn-mark.marked {
+    background: rgba(181,134,13,0.12);
+    color: var(--gold);
+    border-color: var(--gold);
+  }
+
+  /* Bookmarks panel */
+  .bookmarks-panel {
+    margin-top: 20px;
+    border: 1px solid var(--aged);
+    background: var(--rice);
+  }
+  .bookmarks-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--aged);
+    cursor: pointer;
+    user-select: none;
+  }
+  .bookmarks-title {
+    font-size: 13px;
+    color: var(--gold);
+    letter-spacing: 0.15em;
+    font-family: 'Noto Sans TC', sans-serif;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .bookmark-count {
+    background: var(--gold);
+    color: var(--rice);
+    font-size: 11px;
+    padding: 1px 7px;
+    border-radius: 10px;
+    font-family: 'Noto Sans TC', sans-serif;
+  }
+  .bookmarks-toggle-icon {
+    font-size: 12px;
+    color: var(--gold);
+    transition: transform 0.2s;
+  }
+  .bookmarks-toggle-icon.open { transform: rotate(180deg); }
+
+  .bookmarks-body {
+    display: none;
+    padding: 12px 16px 16px;
+    max-height: 340px;
+    overflow-y: auto;
+  }
+  .bookmarks-body.open { display: block; }
+
+  .bm-empty {
+    font-size: 13px;
+    color: rgba(26,18,8,0.35);
+    text-align: center;
+    padding: 16px 0;
+    font-family: 'Noto Sans TC', sans-serif;
+    letter-spacing: 0.1em;
+  }
+
+  .bm-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .bm-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: var(--paper);
+    border: 1px solid var(--aged);
+    font-family: 'Noto Serif TC', serif;
+    font-size: 14px;
+    color: var(--brush);
+  }
+  .bm-section-tag {
+    font-size: 10px;
+    padding: 2px 6px;
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    font-family: 'Noto Sans TC', sans-serif;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .bm-q { flex: 1; }
+  .bm-a {
+    color: var(--seal);
+    font-weight: 600;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+  .bm-remove {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: rgba(26,18,8,0.3);
+    font-size: 14px;
+    padding: 0 2px;
+    transition: color 0.15s;
+    flex-shrink: 0;
+  }
+  .bm-remove:hover { color: var(--seal); }
+
+  .bm-practice-btn {
+    margin-top: 12px;
+    width: 100%;
+    padding: 8px;
+    font-size: 13px;
+    font-family: 'Noto Serif TC', serif;
+    background: var(--brush);
+    color: var(--aged);
+    border: none;
+    cursor: pointer;
+    letter-spacing: 0.1em;
+    transition: all 0.2s;
+  }
+  .bm-practice-btn:hover { background: var(--ink); }
+  .bm-clear-btn {
+    margin-top: 6px;
+    width: 100%;
+    padding: 6px;
+    font-size: 12px;
+    font-family: 'Noto Sans TC', sans-serif;
+    background: transparent;
+    color: rgba(26,18,8,0.4);
+    border: 1px solid var(--aged);
+    cursor: pointer;
+    letter-spacing: 0.1em;
+    transition: all 0.2s;
+  }
+  .bm-clear-btn:hover { border-color: var(--seal); color: var(--seal); }
+
+  /* Timer expired overlay */
+  .time-up-banner {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    background: var(--seal);
+    color: var(--rice);
+    text-align: center;
+    padding: 10px;
+    font-family: 'Ma Shan Zheng', serif;
+    font-size: 20px;
+    letter-spacing: 0.2em;
+    z-index: 999;
+    animation: slideDown 0.3s ease;
+  }
+  @keyframes slideDown { from{transform:translateY(-100%)} to{transform:translateY(0)} }
+  .time-up-banner.show { display: block; }
+
   /* Progress */
   .progress-bar-wrap {
     display: flex;
@@ -491,14 +694,15 @@
   /* Section tabs */
   .section-tabs {
     display: flex;
+    flex-wrap: wrap;
     gap: 0;
     margin-bottom: 16px;
     border-bottom: 2px solid var(--gold);
   }
 
   .section-tab {
-    padding: 8px 20px;
-    font-size: 13px;
+    padding: 8px 14px;
+    font-size: 12px;
     font-family: 'Noto Serif TC', serif;
     background: transparent;
     color: rgba(26,18,8,0.5);
@@ -506,10 +710,12 @@
     border-bottom: none;
     cursor: pointer;
     margin-right: 4px;
-    letter-spacing: 0.1em;
+    margin-bottom: 0;
+    letter-spacing: 0.05em;
     transition: all 0.2s;
     position: relative;
     bottom: -2px;
+    white-space: nowrap;
   }
   .section-tab.active {
     background: var(--rice);
@@ -537,14 +743,19 @@
       <h1>臺灣客語練習帖</h1>
       <div class="seal">四縣</div>
     </div>
-    <div class="subtitle">114年全國語文競賽・字音字形・四縣腔教師社會組</div>
+    <div class="subtitle">113–114年全國語文競賽・字音字形・四縣腔教師社會組</div>
   </header>
 
   <!-- Section tabs -->
   <div class="section-tabs">
-    <button class="section-tab active" id="tab1" onclick="switchSection(1)">一、漢字寫拼音（100題）</button>
-    <button class="section-tab" id="tab2" onclick="switchSection(2)">二、拼音寫漢字（100題）</button>
+    <button class="section-tab active" id="tab1" onclick="switchSection(1)">一、114年漢字寫拼音</button>
+    <button class="section-tab" id="tab2" onclick="switchSection(2)">二、114年拼音寫漢字</button>
+    <button class="section-tab" id="tab3" onclick="switchSection(3)">三、113年漢字寫拼音</button>
+    <button class="section-tab" id="tab4" onclick="switchSection(4)">四、113年拼音寫漢字</button>
   </div>
+
+  <!-- Time up banner -->
+  <div class="time-up-banner" id="timeUpBanner">⏱ 時間到！Ten minutes is up!</div>
 
   <!-- Controls -->
   <div class="controls">
@@ -554,6 +765,12 @@
         <button class="btn-toggle active" id="btnSeq" onclick="setMode('seq')">依序</button>
         <button class="btn-toggle" id="btnRand" onclick="setMode('rand')">隨機</button>
       </div>
+    </div>
+    <div class="ctrl-group timer-wrap">
+      <span class="ctrl-label">計時</span>
+      <div class="timer-display" id="timerDisplay">10:00</div>
+      <button class="btn-timer" id="btnTimer" onclick="toggleTimer()">開始</button>
+      <button class="btn-timer" onclick="resetTimer()" title="重設計時器" style="padding:5px 8px;">↺</button>
     </div>
     <div class="ctrl-group">
       <button class="btn-action" onclick="restartQuiz()">↺ 重新開始</button>
@@ -576,6 +793,7 @@
       <div class="question-hint" id="questionHint">請寫出「」內之拼音</div>
       <div class="question-text" id="questionText">—</div>
     </div>
+    <button class="btn-mark" id="btnMark" onclick="toggleMark()">☆ 標記練習</button>
   </div>
 
   <!-- Answer -->
@@ -616,6 +834,23 @@
     <button class="btn-clear-wb" onclick="clearCanvas()">清除書寫板</button>
     <button class="btn-reveal" id="btnReveal" onclick="revealAnswer()">顯示答案</button>
     <button class="btn-next" onclick="nextQuestion()">下一題 →</button>
+  </div>
+
+  <!-- Bookmarks Panel -->
+  <div class="bookmarks-panel" id="bookmarksPanel">
+    <div class="bookmarks-header" onclick="toggleBookmarksPanel()">
+      <div class="bookmarks-title">
+        ★ 需要加強練習
+        <span class="bookmark-count" id="bookmarkCount">0</span>
+      </div>
+      <div class="bookmarks-toggle-icon" id="bmToggleIcon">▼</div>
+    </div>
+    <div class="bookmarks-body" id="bookmarksBody">
+      <div class="bm-empty" id="bmEmpty">尚未標記任何題目</div>
+      <div class="bm-list" id="bmList"></div>
+      <button class="bm-practice-btn" id="bmPracticeBtn" onclick="practiceMarked()" style="display:none">★ 只練習已標記題目</button>
+      <button class="bm-clear-btn" id="bmClearBtn" onclick="clearAllMarks()" style="display:none">清除全部標記</button>
+    </div>
   </div>
 
 </div>
@@ -828,6 +1063,213 @@ const section2 = [
   {q:'「za」dienˊ', a:'詐'},
 ];
 
+// ==================== 113年資料 ====================
+const section3 = [
+  {q:'雙「瞼」目', a:'ngiamˊ'},
+  {q:'「挳」字眼', a:'kang'},
+  {q:'榮「譽」', a:'i'},
+  {q:'住「宅」區', a:'ced'},
+  {q:'骨「骼」', a:'gagˋ'},
+  {q:'「輟」學', a:'dodˋ'},
+  {q:'遰「穢」', a:'ve'},
+  {q:'「捩」捩轉', a:'lidˋ/didˋ'},
+  {q:'「糴」米', a:'tag'},
+  {q:'好「喋」', a:'de'},
+  {q:'「鑿」空', a:'cog'},
+  {q:'軟「怠」怠仔', a:'taiˋ'},
+  {q:'「拚」事', a:'biang'},
+  {q:'咬薑「啜」醋', a:'codˋ'},
+  {q:'「鑑」定', a:'gam'},
+  {q:'「微」毛末節', a:'miˇ'},
+  {q:'久「仰」', a:'ngiongˋ'},
+  {q:'「藠」頭', a:'kieuˊ'},
+  {q:'「俠」義', a:'hiab'},
+  {q:'「綢」緞', a:'cuˇ'},
+  {q:'廉「潔」', a:'giedˋ'},
+  {q:'「虐」削', a:'ngiogˋ'},
+  {q:'「欽」佩', a:'kimˊ'},
+  {q:'「碩」士', a:'sag'},
+  {q:'「𠎷」碎', a:'sabˋ'},
+  {q:'「杏」仁', a:'hen'},
+  {q:'「𤌍」窯仔', a:'kogˋ'},
+  {q:'「㐁」舌', a:'leˇ/teˋ'},
+  {q:'家「眷」', a:'gienˋ'},
+  {q:'「唶」果汁', a:'jiod'},
+  {q:'臭「翕」', a:'hibˋ'},
+  {q:'星「宿」', a:'xiu'},
+  {q:'牙「确」仔', a:'gog/kog'},
+  {q:'「創」業', a:'congˋ'},
+  {q:'「潗」出', a:'xib'},
+  {q:'「茯」苓', a:'fug'},
+  {q:'「仲」介', a:'cung'},
+  {q:'「堯」舜', a:'ngieuˇ'},
+  {q:'油「垢」', a:'gieuˋ'},
+  {q:'埋「沒」', a:'mud'},
+  {q:'「撨」位仔', a:'qiauˇ'},
+  {q:'「掀」開', a:'ienˊ/hienˊ'},
+  {q:'公「嘗」', a:'songˇ'},
+  {q:'「菣」香', a:'kien'},
+  {q:'「峽」灣', a:'hiab'},
+  {q:'「秥」米', a:'zamˊ'},
+  {q:'刁「琢」', a:'dogˋ'},
+  {q:'「側」角', a:'zedˋ'},
+  {q:'「汨」水', a:'mi'},
+  {q:'初「伏」', a:'fug'},
+  {q:'「揜」起來', a:'kiebˋ'},
+  {q:'「抺」抺摸摸', a:'miˇ'},
+  {q:'「淬」鑊頭', a:'qi'},
+  {q:'「枸」薑', a:'gieuˋ'},
+  {q:'「拒」絕', a:'kiˊ'},
+  {q:'頭「臥」臥仔', a:'ngo'},
+  {q:'「奪」地氣', a:'tod'},
+  {q:'一「廿」長', a:'ngiam'},
+  {q:'「鸞」生', a:'lanˇ'},
+  {q:'「蹺」腳', a:'kiauˊ'},
+  {q:'下「旬」', a:'sunˇ'},
+  {q:'「醃」缸', a:'amˊ'},
+  {q:'六「畜」興旺', a:'hiugˋ'},
+  {q:'冷「沁」沁仔', a:'xim'},
+  {q:'「侵」入', a:'qimˊ/qimˋ'},
+  {q:'籮「䈪」', a:'gagˋ'},
+  {q:'「毅」力', a:'ngi'},
+  {q:'「探」根', a:'dam'},
+  {q:'「挷」面', a:'bangˊ'},
+  {q:'「哲」學', a:'zadˋ'},
+  {q:'黃「嘏」紙', a:'guˋ'},
+  {q:'「募」集', a:'mogˋ'},
+  {q:'山布「荊」', a:'giangˊ'},
+  {q:'「棧」學寮', a:'zanˋ'},
+  {q:'「笊」簍', a:'zau'},
+  {q:'「牧」師', a:'mug'},
+  {q:'起「胮」', a:'pongˇ'},
+  {q:'「翻」腸', a:'ponˊ'},
+  {q:'「竻」竹', a:'nedˋ'},
+  {q:'「葛」藤', a:'godˋ'},
+  {q:'「𠖄」衫', a:'dungˊ'},
+  {q:'「否」認', a:'feuˋ'},
+  {q:'「揤」鹹菜', a:'jidˋ'},
+  {q:'赤腳嫲「踏」', a:'dab'},
+  {q:'訴「訟」', a:'xiung'},
+  {q:'「挾」錢', a:'hiabˋ'},
+  {q:'「閱」兵', a:'ied'},
+  {q:'「逆」境', a:'ngiag'},
+  {q:'毀「謗」', a:'bong'},
+  {q:'零「星」', a:'sangˊ'},
+  {q:'「煠」卵', a:'sab'},
+  {q:'「鼎」立', a:'dinˋ'},
+  {q:'「鍬」泥', a:'qiauˊ'},
+  {q:'目汁「濫」泔', a:'lamˇ'},
+  {q:'口「訣」', a:'giedˋ'},
+  {q:'「梧」桐', a:'ngˇ'},
+  {q:'淪「陷」', a:'ham'},
+  {q:'「胛」心肉', a:'gabˋ'},
+  {q:'「汫」燥', a:'jiang'},
+  {q:'「淮」山', a:'faiˇ'},
+];
+
+const section4 = [
+  {q:'「nemˊ」vongˇ', a:'淰'},
+  {q:'「med」gudˋ', a:'篾'},
+  {q:'「paˇ」tienˇ', a:'耙'},
+  {q:'「caiˇ」zogˋ', a:'裁'},
+  {q:'sungˊ「qion」guˋ', a:'旋'},
+  {q:'fanˊ「can」', a:'綻'},
+  {q:'ciin「toˇ」', a:'砣'},
+  {q:'「biag」zoi gogˋ', a:'擗'},
+  {q:'cab「ce」', a:'細'},
+  {q:'「ngi」ngi ngia ngia', a:'齬'},
+  {q:'vuˊ zoi「bidˋ」', a:'鷝'},
+  {q:'「cang」tuiˋ', a:'撐'},
+  {q:'「tuˇ」zaiˋ', a:'屠'},
+  {q:'miˊ「xia」siiˋ', a:'瀉'},
+  {q:'「tamˇ」foˋ guiˋ', a:'痰'},
+  {q:'gaˊ「tungˇ」eˋ', a:'僮'},
+  {q:'「zabˋ」zen', a:'砸'},
+  {q:'「banˊ」teuˇ namˋ giangˋ', a:'扳'},
+  {q:'「iu」gudˋ', a:'幼'},
+  {q:'liungˇ「gien」', a:'峎'},
+  {q:'「bogˋ」kam', a:'䃗'},
+  {q:'「camˊ」suiˋ', a:'摻'},
+  {q:'lungˇ「hongˊ」', a:'糠'},
+  {q:'「demˋ」giogˋ', a:'蹬'},
+  {q:'「kauˊ」seˋ', a:'訄'},
+  {q:'「jiongˊ」samˊ fu', a:'漿'},
+  {q:'「liam」qia', a:'稴'},
+  {q:'abˋ「tunˇ」eˋ', a:'豚'},
+  {q:'vuˊ「logˋ」', a:'烙'},
+  {q:'teuˇ hinˇ noˋ「bienˋ」', a:'疺'},
+  {q:'「gamˊ」jidˋ', a:'疳'},
+  {q:'「vi」goiˊ', a:'畏'},
+  {q:'「cad」seuˊ', a:'撤'},
+  {q:'「xiabˋ」zogˋ giogˋ', a:'楔'},
+  {q:'idˋ「paˊ」tien foˋ', a:'葩'},
+  {q:'「punˇ」gieˊ goiˊ', a:'歕'},
+  {q:'langˊ「pidˋ」', a:'僻'},
+  {q:'「diaˊ」songˊ diaˊ haˊ', a:'蹀'},
+  {q:'zong「ngoi」', a:'礙'},
+  {q:'go「lauˇ」', a:'潦'},
+  {q:'hiungˇ「bangˇ/bang」bangˇ/bang eˋ', a:'弸'},
+  {q:'「gon」congˇ', a:'灌'},
+  {q:'ienˊ gaˊ「bi」boi', a:'泌'},
+  {q:'「pad」hiedˋ', a:'潑'},
+  {q:'「pi」tamˇ', a:'呸'},
+  {q:'「amˊ」zugˋ pangˇ', a:'掩'},
+  {q:'bodˋ「adˋ」', a:'閼'},
+  {q:'pag「hanˋ」', a:'罕'},
+  {q:'hiˋ「bongˇ」', a:'磅'},
+  {q:'zoi mˇ「gugˋ」', a:'轂'},
+  {q:'「pu」lo cuˋ', a:'䀯'},
+  {q:'「fung」lugˋ', a:'俸'},
+  {q:'「bagˋ」zoi', a:'擘'},
+  {q:'「todˋ」suˋ', a:'脫'},
+  {q:'「sii」tienˇ', a:'蒔'},
+  {q:'「pienˊ」doˋ', a:'偏'},
+  {q:'「zungˊ」kiuˊ', a:'舂'},
+  {q:'guai「piagˋ」', a:'癖'},
+  {q:'leu「goiˊ」', a:'胲'},
+  {q:'「zii」miang', a:'致'},
+  {q:'「punˊ」piˇ', a:'賁'},
+  {q:'「ngog」ia', a:'噩'},
+  {q:'vongˇ「giˊ」banˋ', a:'梔'},
+  {q:'「bugˋ」nui', a:'腹'},
+  {q:'ogˋ「saiˇ」saiˇ eˋ', a:'豺'},
+  {q:'ngiuˇ「agˋ」', a:'軛'},
+  {q:'「mongˋ」gongˋ', a:'罔'},
+  {q:'「soˊ」iamˇ', a:'挲'},
+  {q:'daiˊ「nongˊ」', a:'瓤'},
+  {q:'coi「habˋ」', a:'蓋'},
+  {q:'hi「ngiabˋ」ngiabˋ eˋ', a:'凹'},
+  {q:'「vung」coi', a:'蕹'},
+  {q:'ienˇ「canˇ」', a:'纏'},
+  {q:'fuˋ「magˋ」', a:'蕒'},
+  {q:'「tong」gungˊ', a:'宕'},
+  {q:'vuˊ「du」fungˇ', a:'𪐞'},
+  {q:'「pinˇ」giˋ', a:'憑'},
+  {q:'「ngiem」ngiem', a:'殗'},
+  {q:'「ziinˋ」hinˊ', a:'振'},
+  {q:'fanˋ「cau」', a:'躁'},
+  {q:'cu「puˋ」', a:'殕'},
+  {q:'bodˋ「taiˋ」', a:'癩'},
+  {q:'「jiuˊ」fungˇ', a:'啾'},
+  {q:'「vudˋ」zudˋ', a:'慍'},
+  {q:'「deuˊ」giogˋ', a:'兜'},
+  {q:'iuˇ「giang」', a:'鏡'},
+  {q:'「ciin」honˇ ciin ngied', a:'陣'},
+  {q:'haˊ/haˇ「ngamˊ/ngamˇ」', a:'𪘒'},
+  {q:'hamˇ「xiamˊ」', a:'纖'},
+  {q:'「qiˊ」teuˇ', a:'萋'},
+  {q:'ngidˋ「sogˋ」', a:'朔'},
+  {q:'「baiˊ」koiˊ', a:'掰'},
+  {q:'siinˊ「poiˊ」', a:'胚'},
+  {q:'「giamˋ」gungˊ qienˇ', a:'撿'},
+  {q:'「dodˋ」fo', a:'掇'},
+  {q:'「kab」teuˇ', a:'磕'},
+  {q:'foˋ「lug」doˋ', a:'熝'},
+  {q:'ziin「ngiagˋ」', a:'額'},
+  {q:'piˇ「gienˊ」gienˊ', a:'堅'},
+  {q:'「sogˋ」hon', a:'嗍'},
+];
+
 // ==================== STATE ====================
 let currentSection = 1;
 let mode = 'seq';
@@ -848,9 +1290,9 @@ function buildOrder(len) {
 
 function switchSection(n) {
   currentSection = n;
-  document.getElementById('tab1').classList.toggle('active', n===1);
-  document.getElementById('tab2').classList.toggle('active', n===2);
-  currentData = n===1 ? [...section1] : [...section2];
+  for (let i=1;i<=4;i++) document.getElementById('tab'+i).classList.toggle('active', n===i);
+  const dataMap = {1:section1, 2:section2, 3:section3, 4:section4};
+  currentData = [...dataMap[n]];
   restartQuiz();
 }
 
@@ -890,11 +1332,13 @@ function showQuestion() {
   document.getElementById('progressText').textContent = (idx+1)+' / '+total;
 
   // Type label
-  const typeLabel = currentSection === 1 ? '漢字→拼音' : '拼音→漢字';
+  const isHanziToPinyin = currentSection === 1 || currentSection === 3;
+  const yearLabel = currentSection <= 2 ? '114年・' : '113年・';
+  const typeLabel = isHanziToPinyin ? yearLabel+'漢字→拼音' : yearLabel+'拼音→漢字';
   document.getElementById('questionType').textContent = typeLabel;
   document.getElementById('questionNum').textContent = '第 '+(order[idx]+1)+' 題';
 
-  const hint = currentSection === 1 ? '請寫出「　」內之客語拼音' : '請寫出「　」內對應之客語漢字';
+  const hint = isHanziToPinyin ? '請寫出「　」內之客語拼音' : '請寫出「　」內對應之客語漢字';
   document.getElementById('questionHint').textContent = hint;
 
   // Render question
@@ -902,13 +1346,12 @@ function showQuestion() {
   // Remove 「」 and add color
   const cleaned = item.q.replace('「','').replace('」','');
 
-  if (currentSection === 1) {
-    // Show hanzi, target in red
+  if (currentSection === 1 || currentSection === 3) {
     document.getElementById('questionText').innerHTML = display;
   } else {
-    // Show pinyin, target in red
     document.getElementById('questionText').innerHTML = display;
   }
+  updateMarkButton();
 }
 
 function revealAnswer() {
@@ -1046,10 +1489,241 @@ function clearCanvas() {
   ctx.fillRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
 }
 
+// ==================== TIMER ====================
+let timerSeconds = 600; // 10 min
+let timerInterval = null;
+let timerRunning = false;
+
+function formatTime(s) {
+  const m = Math.floor(s/60);
+  const sec = s%60;
+  return String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
+}
+
+function updateTimerDisplay() {
+  const el = document.getElementById('timerDisplay');
+  el.textContent = formatTime(timerSeconds);
+  el.classList.toggle('urgent', timerSeconds <= 60 && timerSeconds > 0);
+  el.classList.toggle('done', timerSeconds === 0);
+}
+
+function toggleTimer() {
+  if (timerSeconds === 0) { resetTimer(); return; }
+  if (timerRunning) {
+    clearInterval(timerInterval);
+    timerRunning = false;
+    document.getElementById('btnTimer').textContent = '繼續';
+    document.getElementById('btnTimer').classList.remove('running');
+  } else {
+    timerRunning = true;
+    document.getElementById('btnTimer').textContent = '暫停';
+    document.getElementById('btnTimer').classList.add('running');
+    timerInterval = setInterval(() => {
+      timerSeconds--;
+      updateTimerDisplay();
+      if (timerSeconds <= 0) {
+        clearInterval(timerInterval);
+        timerRunning = false;
+        document.getElementById('btnTimer').textContent = '重設';
+        document.getElementById('btnTimer').classList.remove('running');
+        const banner = document.getElementById('timeUpBanner');
+        banner.classList.add('show');
+        setTimeout(() => banner.classList.remove('show'), 4000);
+      }
+    }, 1000);
+  }
+}
+
+function resetTimer() {
+  clearInterval(timerInterval);
+  timerRunning = false;
+  timerSeconds = 600;
+  updateTimerDisplay();
+  document.getElementById('btnTimer').textContent = '開始';
+  document.getElementById('btnTimer').classList.remove('running');
+  document.getElementById('timerDisplay').classList.remove('urgent','done');
+}
+
+// ==================== BOOKMARKS ====================
+// key: "section-originalIndex", value: {q, a, section, num}
+let bookmarks = {};
+let isPracticeMode = false;
+let practiceOrder = [];
+let practiceIdx = 0;
+
+const sectionLabels = {1:'114年一',2:'114年二',3:'113年三',4:'113年四'};
+
+function getBookmarkKey() {
+  return currentSection + '-' + order[idx];
+}
+
+function toggleMark() {
+  if (isPracticeMode) return;
+  const key = getBookmarkKey();
+  const item = currentData[order[idx]];
+  if (bookmarks[key]) {
+    delete bookmarks[key];
+  } else {
+    bookmarks[key] = {
+      q: item.q, a: item.a,
+      section: currentSection,
+      num: order[idx]+1
+    };
+  }
+  updateMarkButton();
+  renderBookmarks();
+}
+
+function updateMarkButton() {
+  if (isPracticeMode) return;
+  const key = getBookmarkKey();
+  const btn = document.getElementById('btnMark');
+  const marked = !!bookmarks[key];
+  btn.textContent = marked ? '★ 已標記' : '☆ 標記練習';
+  btn.classList.toggle('marked', marked);
+}
+
+function renderBookmarks() {
+  const keys = Object.keys(bookmarks);
+  const count = keys.length;
+  document.getElementById('bookmarkCount').textContent = count;
+
+  const bmEmpty = document.getElementById('bmEmpty');
+  const bmList = document.getElementById('bmList');
+  const bmPracticeBtn = document.getElementById('bmPracticeBtn');
+  const bmClearBtn = document.getElementById('bmClearBtn');
+
+  if (count === 0) {
+    bmEmpty.style.display = '';
+    bmList.innerHTML = '';
+    bmPracticeBtn.style.display = 'none';
+    bmClearBtn.style.display = 'none';
+    return;
+  }
+
+  bmEmpty.style.display = 'none';
+  bmPracticeBtn.style.display = '';
+  bmClearBtn.style.display = '';
+
+  bmList.innerHTML = '';
+  keys.forEach(key => {
+    const bm = bookmarks[key];
+    const div = document.createElement('div');
+    div.className = 'bm-item';
+    // highlight target char
+    const displayQ = bm.q.replace('「','').replace('」','');
+    const targetMatch = bm.q.match(/「([^」]+)」/);
+    const displayQHtml = targetMatch
+      ? bm.q.replace('「'+targetMatch[1]+'」', '<span style="color:var(--red);font-weight:700">'+targetMatch[1]+'</span>')
+      : bm.q;
+    div.innerHTML = `
+      <span class="bm-section-tag">${sectionLabels[bm.section]}</span>
+      <span class="bm-q">${displayQHtml}</span>
+      <span class="bm-a">${bm.a}</span>
+      <button class="bm-remove" onclick="removeBookmark('${key}')" title="移除標記">✕</button>
+    `;
+    bmList.appendChild(div);
+  });
+}
+
+function removeBookmark(key) {
+  delete bookmarks[key];
+  renderBookmarks();
+  updateMarkButton();
+}
+
+function clearAllMarks() {
+  if (!confirm('確定清除全部標記？')) return;
+  bookmarks = {};
+  renderBookmarks();
+  updateMarkButton();
+}
+
+function toggleBookmarksPanel() {
+  const body = document.getElementById('bookmarksBody');
+  const icon = document.getElementById('bmToggleIcon');
+  const open = body.classList.toggle('open');
+  icon.classList.toggle('open', open);
+}
+
+function practiceMarked() {
+  const keys = Object.keys(bookmarks);
+  if (keys.length === 0) return;
+  isPracticeMode = true;
+  practiceOrder = keys.map(k => bookmarks[k]);
+  if (mode === 'rand') {
+    for (let i = practiceOrder.length-1; i > 0; i--) {
+      const j = Math.floor(Math.random()*(i+1));
+      [practiceOrder[i],practiceOrder[j]] = [practiceOrder[j],practiceOrder[i]];
+    }
+  }
+  practiceIdx = 0;
+  showPracticeQuestion();
+}
+
+function showPracticeQuestion() {
+  answered = false;
+  hideAnswer();
+  clearCanvas();
+
+  const item = practiceOrder[practiceIdx];
+  const total = practiceOrder.length;
+  const pct = Math.round((practiceIdx/total)*100);
+  document.getElementById('progressFill').style.width = pct+'%';
+  document.getElementById('progressText').textContent = (practiceIdx+1)+' / '+total+' ★';
+
+  const isHanziToPinyin = item.section === 1 || item.section === 3;
+  document.getElementById('questionType').textContent = '★ 加強練習・'+sectionLabels[item.section];
+  document.getElementById('questionNum').textContent = '原第 '+item.num+' 題';
+
+  const hint = isHanziToPinyin ? '請寫出「　」內之客語拼音' : '請寫出「　」內對應之客語漢字';
+  document.getElementById('questionHint').textContent = hint;
+
+  const targetMatch = item.q.match(/「([^」]+)」/);
+  if (targetMatch) {
+    const display = item.q.replace('「'+targetMatch[1]+'」', '<span class="target">'+targetMatch[1]+'</span>');
+    document.getElementById('questionText').innerHTML = display;
+  } else {
+    document.getElementById('questionText').textContent = item.q;
+  }
+
+  // Mark btn in practice mode
+  document.getElementById('btnMark').textContent = '← 返回全部題目';
+  document.getElementById('btnMark').classList.remove('marked');
+  document.getElementById('btnMark').onclick = exitPracticeMode;
+}
+
+function exitPracticeMode() {
+  isPracticeMode = false;
+  document.getElementById('btnMark').onclick = toggleMark;
+  restartQuiz();
+}
+
+// Override nextQuestion to handle practice mode
+const _origNextQuestion = nextQuestion;
+nextQuestion = function() {
+  if (isPracticeMode) {
+    if (practiceIdx < practiceOrder.length - 1) {
+      practiceIdx++;
+      showPracticeQuestion();
+    } else {
+      document.getElementById('questionMain').innerHTML = '<div class="question-text" style="font-size:28px">★ 加強練習完成！</div><div class="question-sub">共 '+practiceOrder.length+' 題</div>';
+      document.getElementById('questionType').textContent = '★ 加強練習';
+      document.getElementById('progressFill').style.width = '100%';
+      document.getElementById('progressText').textContent = practiceOrder.length+' / '+practiceOrder.length+' ★';
+      hideAnswer();
+    }
+    return;
+  }
+  _origNextQuestion();
+};
+
 // ==================== INIT ====================
 window.addEventListener('resize', () => { resizeCanvas(); });
 resizeCanvas();
 restartQuiz();
+updateTimerDisplay();
+renderBookmarks();
 </script>
 </body>
 </html>
