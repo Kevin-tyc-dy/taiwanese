@@ -2,244 +2,490 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
   <title>閩南語卡通錄音室</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --primary-color: #3498db;
-      --success-color: #2ecc71;
-      --active-bg: #fff7d6;
+      --ink:       #1a1a2e;
+      --paper:     #fdf8f0;
+      --cream:     #f5ede0;
+      --gold:      #c9922a;
+      --gold-lt:   #f0d080;
+      --red:       #c0392b;
+      --green:     #27ae60;
+      --blue:      #2471a3;
+      --shadow:    rgba(26,26,46,0.12);
+      --radius:    14px;
+      --toolbar-h: 60px;
     }
 
-    body { 
-      font-family: system-ui, -apple-system, sans-serif; 
-      margin: 0; 
-      background: #f0f2f5; 
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      background: var(--ink);
+      color: var(--ink);
+      font-family: 'Noto Sans TC', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
 
-    h2 { margin: 15px; font-size: 1.5rem; color: #333; text-align: center; }
-
-    /* 主要容器：左右分割 */
-    .main-container {
+    /* ═══════════════════════════════════════
+       TOP BAR
+    ═══════════════════════════════════════ */
+    .topbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: var(--toolbar-h);
+      background: var(--ink);
       display: flex;
-      flex: 1;
-      gap: 20px;
-      padding: 0 20px 20px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      z-index: 100;
+      border-bottom: 2px solid var(--gold);
+    }
+
+    .topbar-title {
+      font-family: 'Noto Serif TC', serif;
+      font-size: 1.1rem;
+      font-weight: 900;
+      color: var(--gold-lt);
+      letter-spacing: 0.05em;
+    }
+
+    .topbar-status {
+      font-size: 0.78rem;
+      color: var(--gold-lt);
+      background: rgba(201,146,42,0.15);
+      border: 1px solid rgba(201,146,42,0.3);
+      padding: 4px 12px;
+      border-radius: 999px;
+      max-width: 200px;
+      white-space: nowrap;
       overflow: hidden;
+      text-overflow: ellipsis;
     }
 
-    /* 左側影片區 */
-    .video-section {
-      flex: 1.2;
+    /* ═══════════════════════════════════════
+       LAYOUT
+    ═══════════════════════════════════════ */
+    .app {
+      padding-top: var(--toolbar-h);
+      height: 100dvh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr auto;
+    }
+
+    /* ── Left: Video ── */
+    .panel-video {
+      grid-column: 1;
+      grid-row: 1 / 3;
+      background: #0d0d1a;
       display: flex;
       flex-direction: column;
-      gap: 15px;
+      padding: 16px;
+      gap: 12px;
+      overflow: hidden;
     }
 
     video {
       width: 100%;
+      border-radius: var(--radius);
       background: #000;
-      border-radius: 12px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+      flex-shrink: 0;
     }
 
-    /* 右側控制與劇本區 */
-    .control-section {
-      flex: 1;
-      background: #fff;
-      border-radius: 12px;
+    .hint-box {
+      background: rgba(201,146,42,0.08);
+      border: 1px solid rgba(201,146,42,0.25);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+    }
+    .hint-box p {
+      font-size: 0.8rem;
+      color: #b8a080;
+      line-height: 1.6;
+    }
+    .hint-box strong { color: var(--gold-lt); }
+
+    /* ── Right top: Controls ── */
+    .panel-controls {
+      grid-column: 2;
+      grid-row: 1;
+      background: var(--paper);
+      overflow-y: auto;
+      padding: 16px;
       display: flex;
       flex-direction: column;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-      overflow: hidden;
+      gap: 10px;
     }
 
-    .top-toolbar {
-      padding: 15px;
-      border-bottom: 1px solid #eee;
+    /* ── Right bottom: Action bar ── */
+    .panel-actions {
+      grid-column: 2;
+      grid-row: 2;
+      background: var(--cream);
+      border-top: 2px solid rgba(201,146,42,0.3);
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    /* ═══════════════════════════════════════
+       OPTION TOGGLES
+    ═══════════════════════════════════════ */
+    .options-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .toggle-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.78rem;
+      color: #555;
       background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 999px;
+      padding: 6px 12px;
+      cursor: pointer;
+      user-select: none;
+      transition: background .15s, border-color .15s;
+    }
+    .toggle-label:has(input:checked) {
+      background: #fff7e0;
+      border-color: var(--gold);
+      color: #7a5500;
+      font-weight: 700;
+    }
+    .toggle-label input { display: none; }
+
+    /* ═══════════════════════════════════════
+       GLOBAL ACTION BUTTONS
+    ═══════════════════════════════════════ */
+    .btn-row {
+      display: flex;
+      gap: 8px;
     }
 
-    .script-list {
-      flex: 1;
-      overflow-y: auto;
-      padding: 15px;
-      background: #fafafa;
+    .btn {
+      min-height: 44px;
+      padding: 0 16px;
+      border-radius: var(--radius);
+      border: none;
+      font-family: 'Noto Sans TC', sans-serif;
+      font-size: 0.88rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity .15s, transform .1s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+    .btn:active { transform: scale(0.96); opacity: .85; }
+    .btn:disabled { opacity: .35; cursor: not-allowed; transform: none; }
+
+    .btn-init   { background: var(--ink);  color: var(--gold-lt); flex: 1; justify-content: center; }
+    .btn-replay { background: var(--blue); color: #fff; flex: 1; justify-content: center; }
+    .btn-clear  { background: #e0d5c5; color: var(--ink); flex: 1; justify-content: center; }
+
+    /* ═══════════════════════════════════════
+       AUDIO MONITORS
+    ═══════════════════════════════════════ */
+    .audio-monitor {
+      background: #fff;
+      border: 1px solid #e0d5c5;
+      border-radius: var(--radius);
+      padding: 10px 12px;
+    }
+    .audio-label {
+      font-size: 0.72rem;
+      color: #999;
+      margin-bottom: 6px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    audio {
+      width: 100%;
+      height: 32px;
+      display: block;
     }
 
-    .bottom-players {
-      padding: 15px;
-      border-top: 1px solid #eee;
-      background: #f8f9fa;
-    }
-
-    /* 按鈕樣式 */
-    .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
-    button { 
-      padding: 10px 14px; 
-      border-radius: 8px; 
-      border: 1px solid #ddd; 
-      background: #fff; 
-      cursor: pointer; 
-      font-weight: 500;
-    }
-    button:hover { background: #f8f9fa; }
-    button:disabled { opacity: .5; cursor: not-allowed; }
-    
-    .btn-main { background: var(--primary-color); color: white; border: none; }
-
-    .pill { padding: 4px 12px; border-radius: 999px; background:#e9ecef; font-size: 13px; color: #666; }
-
-    /* 劇本卡片樣式 */
+    /* ═══════════════════════════════════════
+       SCRIPT LINES
+    ═══════════════════════════════════════ */
     .line {
-      border: 1px solid #e3e3e3;
       background: #fff;
+      border: 1.5px solid #e5ddd0;
+      border-radius: var(--radius);
       padding: 14px;
-      margin-bottom: 12px;
-      border-radius: 10px;
+      transition: border-color .2s, background .2s, box-shadow .2s;
     }
-    .line.active { border-left: 6px solid #f1c40f; background: var(--active-bg); }
-    .line.done { border-left: 6px solid var(--success-color); }
-    
-    .role { font-weight: 800; color: #2c3e50; margin-bottom: 5px; display: block; }
-    .text { font-size: 1.1rem; line-height: 1.5; color: #34495e; margin-bottom: 10px; }
-    
-    .line-btns { display: flex; gap: 6px; flex-wrap: wrap; }
-    .hint { color:#777; font-size: 13px; line-height: 1.4; }
+    .line.active {
+      border-color: var(--gold);
+      background: #fffbf0;
+      box-shadow: 0 0 0 3px rgba(201,146,42,0.12), 0 4px 16px var(--shadow);
+    }
+    .line.done {
+      border-color: var(--green);
+      background: #f0faf4;
+    }
+    .line.done .line-role::after {
+      content: " ✓";
+      color: var(--green);
+      font-size: 0.85em;
+    }
 
-    /* 手機模式 */
-/* 平板直式與手機模式修正 */
+    .line-role {
+      font-family: 'Noto Serif TC', serif;
+      font-size: 0.78rem;
+      font-weight: 900;
+      color: var(--gold);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .line-text {
+      font-size: 1.15rem;
+      line-height: 1.65;
+      color: var(--ink);
+      margin-bottom: 12px;
+    }
+
+    /* 2×2 grid for line buttons */
+    .line-btns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+
+    .line-btn {
+      min-height: 44px;
+      border-radius: 10px;
+      border: 1.5px solid #e0d5c5;
+      background: #fdf8f0;
+      font-family: 'Noto Sans TC', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      transition: background .15s, border-color .15s, transform .1s;
+      color: var(--ink);
+    }
+    .line-btn:active  { transform: scale(0.95); }
+    .line-btn:disabled { opacity: .3; cursor: not-allowed; transform: none; }
+
+    .line-btn.btn-record { background: #fef0ee; border-color: #e8a090; color: var(--red); }
+    .line-btn.btn-demo   { background: #eef4fc; border-color: #a0c0e0; color: var(--blue); }
+    .line-btn.btn-goto   { background: #f5f5f5; border-color: #ccc; color: #555; }
+    .line-btn.btn-play   { background: #f0faf4; border-color: #90d0a0; color: var(--green); }
+
+    .line-btn.btn-record:active:not(:disabled) { background: #fcd9d4; }
+
+    /* ═══════════════════════════════════════
+       RECORDING INDICATOR
+    ═══════════════════════════════════════ */
+    .rec-bar {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      background: #fef0ee;
+      border: 1px solid #e8a090;
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-size: 0.82rem;
+      color: var(--red);
+      font-weight: 700;
+    }
+    .rec-bar.active { display: flex; }
+    .rec-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--red);
+      animation: blink 0.8s ease-in-out infinite;
+    }
+    @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.15; } }
+
+    /* ═══════════════════════════════════════
+       TABLET PORTRAIT / PHONE
+    ═══════════════════════════════════════ */
     @media (max-width: 900px) {
-      body {
-        /* 取消強制 100vh，讓頁面可以自然捲動 */
-        height: auto; 
+      .app {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr auto;
+        height: auto;
+        min-height: 100dvh;
         overflow-y: auto;
       }
 
-      .main-container {
-        flex-direction: column;
-        overflow: visible;
-        padding-bottom: 30px; /* 底部留點空間 */
+      .panel-video {
+        grid-column: 1;
+        grid-row: 1;
       }
 
-      /* 重點修正：影片區塊不要自動拉伸，高度由內容決定 */
-      .video-section {
-        flex: none; 
-        width: 100%;
+      .panel-controls {
+        grid-column: 1;
+        grid-row: 2;
+        max-height: 55dvh;
       }
 
-      /* 讓影片填滿寬度 */
-      video {
-        width: 100%;
-        height: auto;
+      .panel-actions {
+        grid-column: 1;
+        grid-row: 3;
+        position: sticky;
+        bottom: 0;
       }
 
-      .control-section {
-        height: auto;
-        flex: none; /* 控制區也不要強制拉伸，自然呈現 */
+      .line-btns {
+        grid-template-columns: 1fr 1fr;
       }
+    }
 
-      /* 調整劇本列表的高度，避免太短或太長 */
-      .script-list {
-        height: 50vh; /* 讓劇本列表佔螢幕一半高度，方便捲動 */
-        max-height: 500px;
-      }
+    @media (max-width: 480px) {
+      .topbar-title { font-size: 0.95rem; }
+      .line-text { font-size: 1rem; }
     }
   </style>
 </head>
 <body>
 
-  <h2>🎙️ 閩南語卡通配音錄音室</h2>
+<!-- ── TOP BAR ── -->
+<div class="topbar">
+  <div class="topbar-title">🎙️ 閩南語配音錄音室</div>
+  <div id="status" class="topbar-status">尚未初始化</div>
+</div>
 
-  <div class="main-container">
-    <div class="video-section">
-      <video id="video" src="video.mp4" controls playsinline preload="metadata"></video>
-      <div style="padding: 15px; background: #fff; border-radius: 8px;">
-        <p class="hint" style="margin:0;"><strong>💡 操作小叮嚀：</strong><br>
-        • 先按「允許麥克風」才能開始錄音。<br>
-        • 錄音時影片會自動播放，時間到會自動停止。</p>
-      </div>
-    </div>
+<div class="app">
 
-    <div class="control-section">
-      <div class="top-toolbar">
-        <div class="row">
-          <button id="btnInit" class="btn-main">1) 允許麥克風</button>
-          <button id="btnReplayAll" disabled>▶ 聽配音結果</button>
-          <button id="btnClear" disabled>🗑 清除全部</button>
-        </div>
-        <div class="row">
-          <span id="status" class="pill">尚未初始化</span>
-        </div>
-        <div class="row" style="font-size: 13px; color: #444;">
-          <label><input type="checkbox" id="chkDemoSeek" checked> 聽示範時同步跳到畫面</label>
-          <label><input type="checkbox" id="chkHearVideo" checked> 錄音時聽示範</label>
-          <label style="margin-left:10px;"><input type="checkbox" id="chkAutoNext" checked> 錄完自動下一句</label>
-        </div>
-      </div>
-
-      <div id="script" class="script-list">
-        </div>
-
-      <div class="bottom-players">
-        <div style="margin-bottom: 8px;">
-          <span style="font-size: 12px; color: #888;">🔊 示範播放中：</span>
-          <audio id="demoPlayer" controls style="width: 100%; height: 30px;"></audio>
-        </div>
-        <div>
-          <span style="font-size: 12px; color: #888;">🎤 你的單句錄音：</span>
-          <audio id="preview" controls style="width: 100%; height: 30px;"></audio>
-        </div>
-      </div>
+  <!-- ── LEFT: VIDEO ── -->
+  <div class="panel-video">
+    <video id="video" src="video.mp4" controls playsinline webkit-playsinline preload="auto"></video>
+    <div class="hint-box">
+      <p>
+        <strong>💡 操作小叮嚀</strong><br>
+        先按「允許麥克風」才能開始錄音。<br>
+        錄音時影片會自動播放，時間到自動停止。<br>
+        每句錄完可按「▶ 聽錄音」確認效果。
+      </p>
     </div>
   </div>
 
+  <!-- ── RIGHT TOP: SCRIPT ── -->
+  <div class="panel-controls" id="script"></div>
+
+  <!-- ── RIGHT BOTTOM: ACTION BAR ── -->
+  <div class="panel-actions">
+
+    <!-- Recording progress indicator -->
+    <div class="rec-bar" id="recBar">
+      <div class="rec-dot"></div>
+      <span id="recTimer">錄音中…</span>
+    </div>
+
+    <!-- Option toggles -->
+    <div class="options-row">
+      <label class="toggle-label">
+        <input type="checkbox" id="chkDemoSeek" checked> 📺 示範同步畫面
+      </label>
+      <label class="toggle-label">
+        <input type="checkbox" id="chkHearVideo" checked> 🔉 錄音時聽示範
+      </label>
+      <label class="toggle-label">
+        <input type="checkbox" id="chkAutoNext" checked> ⏭ 錄完自動下一句
+      </label>
+    </div>
+
+    <!-- Main action buttons -->
+    <div class="btn-row">
+      <button class="btn btn-init"   id="btnInit">🎤 允許麥克風</button>
+      <button class="btn btn-replay" id="btnReplayAll" disabled>▶ 聽配音成品</button>
+      <button class="btn btn-clear"  id="btnClear"    disabled>🗑 清除</button>
+    </div>
+
+    <!-- Audio monitors -->
+    <div class="audio-monitor">
+      <div class="audio-label">🔊 示範播放</div>
+      <audio id="demoPlayer" controls></audio>
+    </div>
+    <div class="audio-monitor">
+      <div class="audio-label">🎤 你的錄音</div>
+      <audio id="preview" controls></audio>
+    </div>
+
+  </div>
+</div>
+
 <script>
-const singlePlayer = new Audio();
-// 用來記錄目前正在運作的「示範停止監聽器」，方便切換時移除
-let currentDemoHandler = null;
 (() => {
-  const video = document.getElementById('video');
-  const btnInit = document.getElementById('btnInit');
-  const btnReplayAll = document.getElementById('btnReplayAll');
-  const btnClear = document.getElementById('btnClear');
-  const statusEl = document.getElementById('status');
-  const scriptEl = document.getElementById('script');
-  const preview = document.getElementById('preview');
-  const demoPlayer = document.getElementById('demoPlayer');
+  /* ─── 元素參照 ─── */
+  const video       = document.getElementById('video');
+  const btnInit     = document.getElementById('btnInit');
+  const btnReplayAll= document.getElementById('btnReplayAll');
+  const btnClear    = document.getElementById('btnClear');
+  const statusEl    = document.getElementById('status');
+  const scriptEl    = document.getElementById('script');
+  const preview     = document.getElementById('preview');
+  const demoPlayer  = document.getElementById('demoPlayer');
+  const recBar      = document.getElementById('recBar');
+  const recTimer    = document.getElementById('recTimer');
 
   const chkHearVideo = document.getElementById('chkHearVideo');
-  const chkAutoNext = document.getElementById('chkAutoNext');
-  const chkDemoSeek = document.getElementById('chkDemoSeek');
+  const chkAutoNext  = document.getElementById('chkAutoNext');
+  const chkDemoSeek  = document.getElementById('chkDemoSeek');
 
+  /* ─── 劇本資料 ─── */
   const lines = [
-    { "role": "阿志", "text": "聽好！今年阿嬤的紅包特別大包，咱絕對袂使漏氣！", "start": 0, "end": 6.02 },
-    { "role": "美美", "text": "哼，我早就準備好了。「金銀財寶滿厝內，好運這馬緊落來」！", "start": 6.12, "end": 12.14 },
-    { "role": "大胖", "text": "啊...我只想要食年糕...腹肚好餓...", "start": 12.80, "end": 18.17 },
-    { "role": "阿志", "text": "袂使食！這馬開始特訓！大胖，換你！上厲害彼句！", "start": 18.18, "end": 25.03 },
-    { "role": "大胖", "text": "喔好！祝阿嬤...身體健康...萬事如意...食百二...", "start": 25.30, "end": 33.03 },
-    { "role": "阿志", "text": "太普通啦！愛閣較有力咧！", "start": 33.24, "end": 41.03 },
-    { "role": "阿嬤", "text": "乖孫～阿嬤來發紅包囉～", "start": 42.60, "end": 47.01 },
-    { "role": "三人", "text": "阿嬤！", "start": 47.30, "end": 51.11 },
-    { "role": "大胖", "text": "阿嬤！祝你...祝你...「身體硬梆梆」！", "start": 51.60, "end": 56.14 },
-    { "role": "阿嬤", "text": "喔～身體真勇啦吼！真乖真乖，大包的予你！", "start": 60.00, "end": 65.10 }
+    { role:"阿志",  text:"聽好！今年阿嬤的紅包特別大包，咱絕對袂使漏氣！",          start:0,     end:6.02  },
+    { role:"美美",  text:"哼，我早就準備好了。「金銀財寶滿厝內，好運這馬緊落來」！", start:6.12,  end:12.14 },
+    { role:"大胖",  text:"啊...我只想要食年糕...腹肚好餓...",                        start:12.80, end:18.17 },
+    { role:"阿志",  text:"袂使食！這馬開始特訓！大胖，換你！上厲害彼句！",           start:18.18, end:25.03 },
+    { role:"大胖",  text:"喔好！祝阿嬤...身體健康...萬事如意...食百二...",            start:25.30, end:33.03 },
+    { role:"阿志",  text:"太普通啦！愛閣較有力咧！",                                  start:33.24, end:41.03 },
+    { role:"阿嬤",  text:"乖孫～阿嬤來發紅包囉～",                                    start:42.60, end:47.01 },
+    { role:"三人",  text:"阿嬤！",                                                     start:47.30, end:51.11 },
+    { role:"大胖",  text:"阿嬤！祝你...祝你...「身體硬梆梆」！",                       start:51.60, end:56.14 },
+    { role:"阿嬤",  text:"喔～身體真勇啦吼！真乖真乖，大包的予你！",                  start:60.00, end:65.10 },
   ];
 
-  let micStream = null;
-  let currentIndex = 0;
-  const recordings = new Array(lines.length).fill(null);
+  /* ─── 狀態 ─── */
+  let micStream        = null;
+  let currentIndex     = 0;
+  let isRecording      = false;
+  let currentDemoHandler = null;
+  let recTimerInterval = null;
+  const recordings     = new Array(lines.length).fill(null);
+  const singlePlayer   = new Audio();
 
-  const setStatus = (t) => statusEl.textContent = t;
+  /* ─── 工具函式 ─── */
+  const setStatus = t => statusEl.textContent = t;
 
-  const seekTo = (videoEl, t) => new Promise((resolve) => {
-    const done = () => { videoEl.removeEventListener('seeked', done); resolve(); };
-    videoEl.addEventListener('seeked', done);
-    videoEl.currentTime = t;
+  const getSupportedMimeType = () => {
+    const types = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg'];
+    return types.find(t => MediaRecorder.isTypeSupported(t)) || '';
+  };
+
+  const seekTo = (el, t) => new Promise(resolve => {
+    const done = () => { el.removeEventListener('seeked', done); resolve(); };
+    el.addEventListener('seeked', done);
+    el.currentTime = t;
   });
 
+  /* ─── 渲染劇本 ─── */
   const render = () => {
     scriptEl.innerHTML = '';
     lines.forEach((l, i) => {
@@ -247,53 +493,73 @@ let currentDemoHandler = null;
       div.className = 'line';
       div.id = `line-${i}`;
       if (i === currentIndex) div.classList.add('active');
-      if (recordings[i]) div.classList.add('done');
+      if (recordings[i])     div.classList.add('done');
 
       div.innerHTML = `
-        <span class="role">角色：${l.role}</span>
-        <div class="text">${l.text}</div>
+        <div class="line-role">第 ${i+1} 句・${l.role}</div>
+        <div class="line-text">${l.text}</div>
         <div class="line-btns">
-          <button data-act="record" data-i="${i}" ${!micStream ? 'disabled' : ''} style="color:#d35400;">🎤 錄音</button>
-          <button data-act="demo" data-i="${i}">🔊 聽示範</button>
-          <button data-act="goto" data-i="${i}">⏩ 畫面</button>
-          <button data-act="play" data-i="${i}" ${recordings[i] ? '' : 'disabled'}>▶ 聽錄音</button>
+          <button class="line-btn btn-record" data-act="record" data-i="${i}"
+            ${!micStream || isRecording ? 'disabled' : ''}>🎤 錄音</button>
+          <button class="line-btn btn-demo"   data-act="demo"   data-i="${i}"
+            ${isRecording ? 'disabled' : ''}>🔊 聽示範</button>
+          <button class="line-btn btn-goto"   data-act="goto"   data-i="${i}"
+            ${isRecording ? 'disabled' : ''}>⏩ 跳畫面</button>
+          <button class="line-btn btn-play"   data-act="play"   data-i="${i}"
+            ${recordings[i] && !isRecording ? '' : 'disabled'}>▶ 聽錄音</button>
         </div>
       `;
       scriptEl.appendChild(div);
     });
 
-    btnReplayAll.disabled = !recordings.some(Boolean);
-    btnClear.disabled = !recordings.some(Boolean);
+    btnReplayAll.disabled = !recordings.some(Boolean) || isRecording;
+    btnClear.disabled     = !recordings.some(Boolean) || isRecording;
   };
 
   const setActive = (i, { scroll = true } = {}) => {
     currentIndex = Math.max(0, Math.min(i, lines.length - 1));
     render();
     if (scroll) {
-      document.getElementById(`line-${currentIndex}`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      setTimeout(() => {
+        document.getElementById(`line-${currentIndex}`)?.scrollIntoView({ behavior:'smooth', block:'nearest' });
+      }, 80);
     }
   };
 
-const playDemo = async (i) => {
+  /* ─── 錄音計時器 ─── */
+  const startRecBar = (lineEnd) => {
+    recBar.classList.add('active');
+    isRecording = true;
+    render();
+    recTimerInterval = setInterval(() => {
+      const remaining = Math.max(0, lineEnd - video.currentTime);
+      recTimer.textContent = `錄音中… 剩 ${remaining.toFixed(1)} 秒`;
+    }, 100);
+  };
+
+  const stopRecBar = () => {
+    recBar.classList.remove('active');
+    isRecording = false;
+    clearInterval(recTimerInterval);
+    render();
+  };
+
+  /* ─── 聽示範 ─── */
+  const playDemo = async (i) => {
     setActive(i, { scroll: false });
     const line = lines[i];
 
-    // 1. 如果之前有正在跑的監聽器，先移除掉，避免干擾
     if (currentDemoHandler) {
       video.removeEventListener('timeupdate', currentDemoHandler);
       currentDemoHandler = null;
     }
 
-    // 2. 準備播放示範音檔
     preview.pause();
-    demoPlayer.src = `sample/sample${String(i + 1).padStart(2, '0')}.m4a`;
+    demoPlayer.src = `sample/sample${String(i+1).padStart(2,'0')}.m4a`;
 
-    // 3. 處理影片播放邏輯
     if (chkDemoSeek.checked) {
-      video.muted = true; // 聽示範時，建議把影片原聲靜音，才聽得清楚示範音
+      video.muted = true;
       video.currentTime = line.start;
-
-      // 定義：時間到了要做什麼 (暫停 + 移除監聽)
       currentDemoHandler = () => {
         if (video.currentTime >= line.end) {
           video.pause();
@@ -301,109 +567,144 @@ const playDemo = async (i) => {
           currentDemoHandler = null;
         }
       };
-
-      // 掛上監聽器並開始播放影片
       video.addEventListener('timeupdate', currentDemoHandler);
-      video.play().catch((e) => console.log("影片播放被阻擋或失敗", e));
+      try { await video.play(); } catch(e) {}
     }
 
-    // 4. 播放示範聲音
     try {
       await demoPlayer.play();
-    } catch (e) {
-      console.log("音檔播放失敗", e);
+      setStatus(`📻 示範播放：第 ${i+1} 句`);
+    } catch(e) {
+      setStatus('⚠️ 音檔載入失敗');
     }
-
-    setStatus(`播放示範：第 ${i + 1} 句`);
   };
 
+  /* ─── 錄音 ─── */
   const recordLine = async (i) => {
     const line = lines[i];
     setActive(i);
     await seekTo(video, line.start);
 
-    const recorder = new MediaRecorder(micStream);
-    const chunks = [];
-    video.muted = !chkHearVideo.checked;
+    const mimeType = getSupportedMimeType();
+    const recorder = new MediaRecorder(micStream, mimeType ? { mimeType } : {});
+    const chunks   = [];
+    video.muted    = !chkHearVideo.checked;
 
-    const stopAtEnd = () => {
+    const stop = () => {
       video.pause();
       if (recorder.state !== 'inactive') recorder.stop();
       video.removeEventListener('timeupdate', onTime);
     };
-    const onTime = () => { if (video.currentTime >= line.end) stopAtEnd(); };
+    const onTime = () => { if (video.currentTime >= line.end) stop(); };
 
-    recorder.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+    recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
     recorder.onstop = () => {
-      recordings[i] = new Blob(chunks, { type: recorder.mimeType });
-      setStatus(`錄音完成！`);
-      render();
-      if (chkAutoNext.checked && i < lines.length - 1) setActive(i + 1);
+      recordings[i] = new Blob(chunks, { type: mimeType || 'audio/webm' });
+      stopRecBar();
+      setStatus(`✅ 第 ${i+1} 句錄音完成`);
+      if (chkAutoNext.checked && i < lines.length - 1) {
+        setActive(i + 1);
+      }
     };
 
     video.addEventListener('timeupdate', onTime);
     recorder.start();
-    setStatus(`正在錄製中...`);
-    await video.play().catch(()=>{});
+    startRecBar(line.end);
+    setStatus(`🔴 錄製中：第 ${i+1} 句`);
+
+    try { await video.play(); } catch(e) {}
   };
 
+  /* ─── 回放成品 ─── */
   const replayAll = async () => {
-    setStatus('播放成品中...');
+    const hasAny = recordings.some(Boolean);
+    if (!hasAny) return;
+
+    setStatus('▶ 播放配音成品…');
+    video.muted = true;
     video.removeAttribute('controls');
-    video.currentTime = 0; video.muted = true;
+    video.currentTime = 0;
     let nextIdx = 0;
 
-    const onTimeUpdate = () => {
+    const onTime = () => {
       const t = video.currentTime;
       if (nextIdx < lines.length && t >= lines[nextIdx].start) {
         if (recordings[nextIdx]) {
-          setActive(nextIdx);
+          setActive(nextIdx, { scroll: true });
           singlePlayer.src = URL.createObjectURL(recordings[nextIdx]);
-          singlePlayer.play();
+          singlePlayer.play().catch(()=>{});
         }
         nextIdx++;
       }
       if (nextIdx > 0 && t >= lines[nextIdx-1].end) singlePlayer.pause();
     };
 
-    video.addEventListener('timeupdate', onTimeUpdate);
-    video.addEventListener('ended', () => {
-      video.setAttribute('controls', '');
-      setStatus('回放結束');
-    });
-    video.play();
+    const cleanup = () => {
+      video.setAttribute('controls','');
+      video.removeEventListener('timeupdate', onTime);
+      video.removeEventListener('ended', cleanup);
+      setStatus('⏹ 回放結束');
+    };
+
+    video.addEventListener('timeupdate', onTime);
+    video.addEventListener('ended', cleanup);
+    try { await video.play(); } catch(e) {}
   };
 
-  scriptEl.addEventListener('click', async (e) => {
+  /* ─── 頁面隱藏保護（多工切換） ─── */
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && isRecording) {
+      // 找出正在進行的 recorder 並停止（透過 video pause 觸發 timeupdate end）
+      video.pause();
+      setStatus('⚠️ 已暫停：偵測到切換 App');
+    }
+  });
+
+  /* ─── 事件委派：劇本按鈕 ─── */
+  scriptEl.addEventListener('click', async e => {
     const btn = e.target.closest('button');
-    if (!btn) return;
+    if (!btn || btn.disabled) return;
     const { act, i } = btn.dataset;
     const idx = Number(i);
 
     if (act === 'record') await recordLine(idx);
-    if (act === 'demo') await playDemo(idx);
-    if (act === 'goto') { setActive(idx); await seekTo(video, lines[idx].start); }
+    if (act === 'demo')   await playDemo(idx);
+    if (act === 'goto') {
+      setActive(idx);
+      await seekTo(video, lines[idx].start);
+      setStatus(`⏩ 跳到第 ${idx+1} 句`);
+    }
     if (act === 'play') {
       preview.src = URL.createObjectURL(recordings[idx]);
-      preview.play();
+      try { await preview.play(); } catch(e) {}
+      setStatus(`▶ 播放第 ${idx+1} 句錄音`);
     }
   });
 
+  /* ─── 全域按鈕 ─── */
   btnInit.addEventListener('click', async () => {
     try {
       micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      btnInit.textContent = "麥克風已就緒 ✅";
+      btnInit.textContent = '麥克風已就緒 ✅';
       btnInit.disabled = true;
-      setStatus('請點擊右側錄音按鈕開始');
+      setStatus('✅ 麥克風就緒，請開始錄音');
       render();
-    } catch (err) { alert('請允許麥克風權限後重新整理網頁。'); }
+    } catch {
+      alert('請允許麥克風權限後重新整理網頁。');
+    }
   });
 
   btnReplayAll.addEventListener('click', replayAll);
+
   btnClear.addEventListener('click', () => {
-    if(confirm("確定要刪除所有錄音重新開始嗎？")) { recordings.fill(null); render(); }
+    if (confirm('確定要刪除所有錄音重新開始嗎？')) {
+      recordings.fill(null);
+      setStatus('🗑 已清除全部錄音');
+      render();
+    }
   });
 
+  /* ─── 初始化 ─── */
   setActive(0);
 })();
 </script>
