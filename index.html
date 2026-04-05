@@ -444,19 +444,22 @@
   const chkAutoNext  = document.getElementById('chkAutoNext');
   const chkDemoSeek  = document.getElementById('chkDemoSeek');
 
-  /* ─── 劇本資料 ─── */
-  const lines = [
-    { role:"阿志",  text:"聽好！今年阿嬤的紅包特別大包，咱絕對袂使漏氣！",          start:0,     end:6.02  },
-    { role:"美美",  text:"哼，我早就準備好了。「金銀財寶滿厝內，好運這馬緊落來」！", start:6.12,  end:12.14 },
-    { role:"大胖",  text:"啊...我只想要食年糕...腹肚好餓...",                        start:12.80, end:18.17 },
-    { role:"阿志",  text:"袂使食！這馬開始特訓！大胖，換你！上厲害彼句！",           start:18.18, end:25.03 },
-    { role:"大胖",  text:"喔好！祝阿嬤...身體健康...萬事如意...食百二...",            start:25.30, end:33.03 },
-    { role:"阿志",  text:"太普通啦！愛閣較有力咧！",                                  start:33.24, end:41.03 },
-    { role:"阿嬤",  text:"乖孫～阿嬤來發紅包囉～",                                    start:42.60, end:47.01 },
-    { role:"三人",  text:"阿嬤！",                                                     start:47.30, end:51.11 },
-    { role:"大胖",  text:"阿嬤！祝你...祝你...「身體硬梆梆」！",                       start:51.60, end:56.14 },
-    { role:"阿嬤",  text:"喔～身體真勇啦吼！真乖真乖，大包的予你！",                  start:60.00, end:65.10 },
-  ];
+  /* ─── 劇本資料（從 script.txt 讀取）─── */
+  // 格式：每行 「角色|台詞|開始秒|結束秒」，# 開頭為註解，空白行忽略
+  const parseTxt = (text) => text
+    .split('\n')
+    .map(l => l.trim())
+    .filter(l => l && !l.startsWith('#'))
+    .map((l, idx) => {
+      const parts = l.split('|');
+      if (parts.length < 4) throw new Error(`第 ${idx + 1} 行格式錯誤：「${l}」\n請確認格式為：角色|台詞|開始秒|結束秒`);
+      const start = parseFloat(parts[2]);
+      const end   = parseFloat(parts[3]);
+      if (isNaN(start) || isNaN(end)) throw new Error(`第 ${idx + 1} 行時間格式錯誤：開始="${parts[2]}" 結束="${parts[3]}"`);
+      return { role: parts[0].trim(), text: parts[1].trim(), start, end };
+    });
+
+  let lines = [];
 
   /* ─── 狀態 ─── */
   let micStream        = null;
@@ -464,7 +467,7 @@
   let isRecording      = false;
   let currentDemoHandler = null;
   let recTimerInterval = null;
-  const recordings     = new Array(lines.length).fill(null);
+  let recordings       = [];
   const singlePlayer   = new Audio();
 
   /* ─── 工具函式 ─── */
@@ -711,8 +714,33 @@
     }
   });
 
-  /* ─── 初始化 ─── */
-  setActive(0);
+  /* ─── 初始化：fetch script.txt ─── */
+  const showLoadError = (msg) => {
+    scriptEl.innerHTML = `
+      <div style="padding:24px;text-align:center;color:#c0392b;">
+        <div style="font-size:2rem;margin-bottom:12px;">⚠️</div>
+        <div style="font-weight:700;margin-bottom:8px;">無法載入劇本</div>
+        <div style="font-size:0.85rem;white-space:pre-wrap;color:#666;">${msg}</div>
+      </div>`;
+    setStatus('❌ 劇本載入失敗');
+  };
+
+  (async () => {
+    setStatus('⏳ 載入劇本中…');
+    try {
+      const res = await fetch('script.txt');
+      if (!res.ok) throw new Error(`找不到 script.txt（HTTP ${res.status}）
+請確認 script.txt 和 index.html 放在同一個資料夾`);
+      const text = await res.text();
+      lines = parseTxt(text);
+      if (lines.length === 0) throw new Error('script.txt 內沒有任何有效的劇本行');
+      recordings = new Array(lines.length).fill(null);
+      setActive(0);
+      setStatus('📄 劇本載入完成，請按「允許麥克風」開始');
+    } catch (err) {
+      showLoadError(err.message);
+    }
+  })();
 })();
 </script>
 </body>
