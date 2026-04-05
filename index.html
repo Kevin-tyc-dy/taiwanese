@@ -403,9 +403,6 @@
         <input type="checkbox" id="chkDemoSeek" checked> 📺 示範同步畫面
       </label>
       <label class="toggle-label">
-        <input type="checkbox" id="chkHearVideo" checked> 🔉 錄音時聽示範
-      </label>
-      <label class="toggle-label">
         <input type="checkbox" id="chkAutoNext" checked> ⏭ 錄完自動下一句
       </label>
     </div>
@@ -444,7 +441,6 @@
   const recBar      = document.getElementById('recBar');
   const recTimer    = document.getElementById('recTimer');
 
-  const chkHearVideo = document.getElementById('chkHearVideo');
   const chkAutoNext  = document.getElementById('chkAutoNext');
   const chkDemoSeek  = document.getElementById('chkDemoSeek');
 
@@ -588,12 +584,16 @@
     const mimeType = getSupportedMimeType();
     const recorder = new MediaRecorder(micStream, mimeType ? { mimeType } : {});
     const chunks   = [];
-    video.muted    = !chkHearVideo.checked;
+    video.muted    = true; // 錄音時影片靜音，避免干擾
 
     const stop = () => {
       video.pause();
-      if (recorder.state !== 'inactive') recorder.stop();
       video.removeEventListener('timeupdate', onTime);
+      if (recorder.state === 'recording') {
+        // 先手動索取一次資料（相容 Safari），再 stop
+        recorder.requestData();
+        recorder.stop();
+      }
     };
     const onTime = () => { if (video.currentTime >= line.end) stop(); };
 
@@ -606,7 +606,6 @@
       }
       const blob = new Blob(chunks, { type: mimeType || 'audio/webm' });
       recordings[i] = blob;
-      // 自動更新預覽播放器
       preview.src = URL.createObjectURL(blob);
       stopRecBar();
       setStatus(`✅ 第 ${i+1} 句錄音完成，可按「聽錄音」確認`);
@@ -616,7 +615,7 @@
     };
 
     video.addEventListener('timeupdate', onTime);
-    recorder.start(100); // 每 100ms 收一次資料，確保 Safari 也能正常收到 chunks
+    recorder.start(); // 不加 timeslice，錄成一整段，播放才不會斷
     startRecBar(line.end);
     setStatus(`🔴 錄製中：第 ${i+1} 句`);
 
