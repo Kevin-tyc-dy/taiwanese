@@ -597,18 +597,26 @@
     };
     const onTime = () => { if (video.currentTime >= line.end) stop(); };
 
-    recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+    recorder.ondataavailable = e => { if (e.data && e.data.size > 0) chunks.push(e.data); };
     recorder.onstop = () => {
-      recordings[i] = new Blob(chunks, { type: mimeType || 'audio/webm' });
+      if (chunks.length === 0) {
+        stopRecBar();
+        setStatus(`⚠️ 第 ${i+1} 句錄音失敗（無資料），請再試一次`);
+        return;
+      }
+      const blob = new Blob(chunks, { type: mimeType || 'audio/webm' });
+      recordings[i] = blob;
+      // 自動更新預覽播放器
+      preview.src = URL.createObjectURL(blob);
       stopRecBar();
-      setStatus(`✅ 第 ${i+1} 句錄音完成`);
+      setStatus(`✅ 第 ${i+1} 句錄音完成，可按「聽錄音」確認`);
       if (chkAutoNext.checked && i < lines.length - 1) {
         setActive(i + 1);
       }
     };
 
     video.addEventListener('timeupdate', onTime);
-    recorder.start();
+    recorder.start(100); // 每 100ms 收一次資料，確保 Safari 也能正常收到 chunks
     startRecBar(line.end);
     setStatus(`🔴 錄製中：第 ${i+1} 句`);
 
