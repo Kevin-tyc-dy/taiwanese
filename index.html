@@ -356,6 +356,52 @@
       }
     }
 
+    /* ── 影片容器（兩支影片疊放）── */
+    .video-wrapper {
+      position: relative;
+      width: 100%;
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: #000;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+    .video-wrapper video {
+      width: 100%;
+      display: block;
+      border-radius: 0;
+      box-shadow: none;
+    }
+    /* 去人聲版疊在上方，回放時才顯示 */
+    #videoMute {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      display: none;
+      background: #000;
+    }
+    #videoMute.active { display: block; }
+
+    /* 回放時在影片上方顯示停止按鈕 */
+    .replay-overlay {
+      position: absolute;
+      top: 10px; right: 10px;
+      display: none;
+      z-index: 10;
+    }
+    .replay-overlay.active { display: block; }
+    .btn-stop-replay {
+      background: rgba(0,0,0,0.65);
+      color: #fff;
+      border: 1.5px solid rgba(255,255,255,0.3);
+      border-radius: 999px;
+      padding: 8px 16px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      backdrop-filter: blur(6px);
+    }
+    .btn-stop-replay:active { transform: scale(0.95); }
+
     @media (max-width: 480px) {
       .topbar-title { font-size: 0.95rem; }
       .line-text { font-size: 1rem; }
@@ -374,7 +420,16 @@
 
   <!-- ── LEFT: VIDEO ── -->
   <div class="panel-video">
-    <video id="video" src="video.mp4" controls playsinline webkit-playsinline preload="auto"></video>
+    <div class="video-wrapper">
+      <!-- 原版影片：錄音練習用 -->
+      <video id="video" controls playsinline webkit-playsinline preload="auto"></video>
+      <!-- 去人聲版：回放成品時切換顯示 -->
+      <video id="videoMute" playsinline webkit-playsinline preload="auto" muted></video>
+      <!-- 回放停止按鈕（覆蓋在影片上） -->
+      <div class="replay-overlay" id="replayOverlay">
+        <button class="btn-stop-replay" id="btnStopReplay">⏹ 停止回放</button>
+      </div>
+    </div>
     <div class="hint-box">
       <p>
         <strong>💡 操作小叮嚀</strong><br>
@@ -430,7 +485,10 @@
 <script>
 (() => {
   /* ─── 元素參照 ─── */
-  const video       = document.getElementById('video');
+  const video           = document.getElementById('video');
+  const videoMute       = document.getElementById('videoMute');
+  const replayOverlay   = document.getElementById('replayOverlay');
+  const btnStopReplay   = document.getElementById('btnStopReplay');
   const btnInit     = document.getElementById('btnInit');
   const btnReplayAll= document.getElementById('btnReplayAll');
   const btnClear    = document.getElementById('btnClear');
@@ -445,19 +503,42 @@
   const chkDemoSeek  = document.getElementById('chkDemoSeek');
 
   /* ─── 劇本資料（從 script.txt 讀取）─── */
-  // 格式：每行 「角色|台詞|開始秒|結束秒」，# 開頭為註解，空白行忽略
-  const parseTxt = (text) => text
-    .split('\n')
-    .map(l => l.trim())
-    .filter(l => l && !l.startsWith('#'))
-    .map((l, idx) => {
+  // @ 設定行：@video=video.mp4  @video_mute=video_mute.mp4
+  // 劇本行格式：角色|台詞|開始秒|結束秒
+  // # 開頭為註解，空白行忽略
+  const parseTxt = (text) => {
+    const config = { video: 'video.mp4', video_mute: 'video_mute.mp4' };
+    const lines  = [];
+    let lineNo   = 0;
+
+    // 移除 BOM、統一換行符
+    const clean = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    clean.split('\n').map(l => l.trim()).forEach(l => {
+      if (!l || l.startsWith('#')) return;
+
+      // @ 設定行
+      if (l.startsWith('@')) {
+        const eq = l.indexOf('=');
+        if (eq > 0) {
+          const key = l.slice(1, eq).trim().toLowerCase();
+          const val = l.slice(eq + 1).trim();
+          if (key in config) config[key] = val;
+        }
+        return;
+      }
+
+      // 劇本行
+      lineNo++;
       const parts = l.split('|');
-      if (parts.length < 4) throw new Error(`第 ${idx + 1} 行格式錯誤：「${l}」\n請確認格式為：角色|台詞|開始秒|結束秒`);
+      if (parts.length < 4) throw new Error(`第 ${lineNo} 行格式錯誤：「${l}」\n請確認格式為：角色|台詞|開始秒|結束秒`);
       const start = parseFloat(parts[2]);
       const end   = parseFloat(parts[3]);
-      if (isNaN(start) || isNaN(end)) throw new Error(`第 ${idx + 1} 行時間格式錯誤：開始="${parts[2]}" 結束="${parts[3]}"`);
-      return { role: parts[0].trim(), text: parts[1].trim(), start, end };
+      if (isNaN(start) || isNaN(end)) throw new Error(`第 ${lineNo} 行時間格式錯誤：開始="${parts[2]}" 結束="${parts[3]}"`);
+      lines.push({ role: parts[0].trim(), text: parts[1].trim(), start, end });
     });
+
+    return { config, lines };
+  };
 
   let lines = [];
 
@@ -626,39 +707,65 @@
   };
 
   /* ─── 回放成品 ─── */
+  let replayCleanup = null; // 方便從外部呼叫停止
+
+  const stopReplay = () => {
+    if (replayCleanup) { replayCleanup(); replayCleanup = null; }
+  };
+
   const replayAll = async () => {
     const hasAny = recordings.some(Boolean);
     if (!hasAny) return;
 
+    // 若已有回放中，先停止
+    stopReplay();
+
     setStatus('▶ 播放配音成品…');
-    video.muted = true;
-    video.removeAttribute('controls');
-    video.currentTime = 0;
     let nextIdx = 0;
 
+    // 切換到去人聲版影片
+    videoMute.currentTime = 0;
+    videoMute.muted = false;   // 保留音效 / 音樂
+    videoMute.classList.add('active');
+    video.removeAttribute('controls');
+    replayOverlay.classList.add('active');
+
     const onTime = () => {
-      const t = video.currentTime;
+      const t = videoMute.currentTime;
       if (nextIdx < lines.length && t >= lines[nextIdx].start) {
         if (recordings[nextIdx]) {
           setActive(nextIdx, { scroll: true });
           singlePlayer.src = URL.createObjectURL(recordings[nextIdx]);
-          singlePlayer.play().catch(()=>{});
+          singlePlayer.play().catch(() => {});
         }
         nextIdx++;
       }
-      if (nextIdx > 0 && t >= lines[nextIdx-1].end) singlePlayer.pause();
+      // 每句結束後停掉配音（避免拖到下一句）
+      if (nextIdx > 0 && t >= lines[nextIdx - 1].end) {
+        singlePlayer.pause();
+      }
     };
 
     const cleanup = () => {
-      video.setAttribute('controls','');
-      video.removeEventListener('timeupdate', onTime);
-      video.removeEventListener('ended', cleanup);
+      videoMute.pause();
+      videoMute.classList.remove('active');
+      videoMute.removeEventListener('timeupdate', onTime);
+      videoMute.removeEventListener('ended', cleanup);
+      singlePlayer.pause();
+      video.setAttribute('controls', '');
+      replayOverlay.classList.remove('active');
       setStatus('⏹ 回放結束');
+      replayCleanup = null;
     };
 
-    video.addEventListener('timeupdate', onTime);
-    video.addEventListener('ended', cleanup);
-    try { await video.play(); } catch(e) {}
+    replayCleanup = cleanup;
+    videoMute.addEventListener('timeupdate', onTime);
+    videoMute.addEventListener('ended', cleanup);
+    try { await videoMute.play(); } catch(e) {
+      // video_mute.mp4 不存在時的提示
+      cleanup();
+      setStatus('⚠️ 找不到 video_mute.mp4，請確認檔案存在');
+    }
   };
 
   /* ─── 頁面隱藏保護（多工切換） ─── */
@@ -705,6 +812,7 @@
   });
 
   btnReplayAll.addEventListener('click', replayAll);
+  btnStopReplay.addEventListener('click', stopReplay);
 
   btnClear.addEventListener('click', () => {
     if (confirm('確定要刪除所有錄音重新開始嗎？')) {
@@ -729,11 +837,14 @@
     setStatus('⏳ 載入劇本中…');
     try {
       const res = await fetch('script.txt');
-      if (!res.ok) throw new Error(`找不到 script.txt（HTTP ${res.status}）
-請確認 script.txt 和 index.html 放在同一個資料夾`);
+      if (!res.ok) throw new Error(`找不到 script.txt（HTTP ${res.status}）\n請確認 script.txt 和 index.html 放在同一個資料夾`);
       const text = await res.text();
-      lines = parseTxt(text);
+      const parsed = parseTxt(text);
+      lines = parsed.lines;
       if (lines.length === 0) throw new Error('script.txt 內沒有任何有效的劇本行');
+      // 套用影片設定
+      video.src     = parsed.config.video;
+      videoMute.src = parsed.config.video_mute;
       recordings = new Array(lines.length).fill(null);
       setActive(0);
       setStatus('📄 劇本載入完成，請按「允許麥克風」開始');
