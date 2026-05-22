@@ -662,29 +662,48 @@
   };
 
   /* ─── 錄音 ─── */
+  let activeRecorder  = null; // 追蹤當前 recorder，避免重複啟動
+  let activeOnTime    = null; // 追蹤當前 timeupdate 監聽器，確保每次都能移除
+
   const recordLine = async (i) => {
+    // 若上一句還在錄，先強制停止並清掉殘留監聽器
+    if (activeOnTime) {
+      video.removeEventListener('timeupdate', activeOnTime);
+      activeOnTime = null;
+    }
+    if (activeRecorder && activeRecorder.state !== 'inactive') {
+      activeRecorder.stop();
+      activeRecorder = null;
+    }
+
     const line = lines[i];
     setActive(i);
     await seekTo(video, line.start);
 
     const mimeType = getSupportedMimeType();
     const recorder = new MediaRecorder(micStream, mimeType ? { mimeType } : {});
-    const chunks   = [];
-    video.muted    = true; // 錄音時影片靜音，避免干擾
+    activeRecorder  = recorder;
+    const chunks    = [];
+    video.muted     = true;
 
     const stop = () => {
       video.pause();
-      video.removeEventListener('timeupdate', onTime);
+      if (activeOnTime) {
+        video.removeEventListener('timeupdate', activeOnTime);
+        activeOnTime = null;
+      }
       if (recorder.state === 'recording') {
-        // 先手動索取一次資料（相容 Safari），再 stop
-        recorder.requestData();
+        recorder.requestData(); // 相容 Safari：stop 前先手動索取資料
         recorder.stop();
       }
     };
+
     const onTime = () => { if (video.currentTime >= line.end) stop(); };
+    activeOnTime = onTime; // 記錄起來方便下次清除
 
     recorder.ondataavailable = e => { if (e.data && e.data.size > 0) chunks.push(e.data); };
     recorder.onstop = () => {
+      activeRecorder = null;
       if (chunks.length === 0) {
         stopRecBar();
         setStatus(`⚠️ 第 ${i+1} 句錄音失敗（無資料），請再試一次`);
@@ -701,7 +720,7 @@
     };
 
     video.addEventListener('timeupdate', onTime);
-    recorder.start(); // 不加 timeslice，錄成一整段，播放才不會斷
+    recorder.start();
     startRecBar(line.end);
     setStatus(`🔴 錄製中：第 ${i+1} 句`);
 
