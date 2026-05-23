@@ -1,0 +1,1578 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模擬考試・字音字形</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --paper: #f5efe3;
+    --rice: #faf6ee;
+    --aged: #e8dcc8;
+    --ink: #1a1a1a;
+    --gold: #b5860d;
+    --brush: #2c1810;
+    --seal: #9b1b1b;
+    --green: #2e7d32;
+    --red: #c62828;
+    --orange: #ed6c02;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    font-family: "Noto Serif TC", "Noto Sans TC", serif;
+    color: var(--brush);
+    min-height: 100vh;
+    padding: 12px;
+  }
+
+  /* ============ TOP BAR ============ */
+  .top-bar {
+    background: var(--rice);
+    border: 1px solid var(--aged);
+    border-radius: 6px;
+    padding: 14px 18px;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .top-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: 2px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .top-title .seal {
+    background: var(--seal);
+    color: var(--rice);
+    padding: 4px 10px;
+    font-size: 14px;
+    border-radius: 3px;
+    letter-spacing: 1px;
+  }
+  .top-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .top-btn {
+    background: var(--rice);
+    border: 1px solid var(--aged);
+    color: var(--brush);
+    padding: 7px 14px;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.15s;
+  }
+  .top-btn:hover { background: var(--aged); }
+  .top-btn.primary {
+    background: var(--gold);
+    color: var(--rice);
+    border-color: var(--gold);
+  }
+  .top-btn.primary:hover { background: #9a7308; }
+  .top-btn.danger {
+    color: var(--seal);
+    border-color: var(--seal);
+  }
+  .top-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* ============ CONTROL PANEL ============ */
+  .panel {
+    background: var(--rice);
+    border: 1px solid var(--aged);
+    border-radius: 6px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .panel-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+  .panel-row:last-child { margin-bottom: 0; }
+  .panel-label {
+    font-weight: 600;
+    color: var(--brush);
+    font-size: 14px;
+    min-width: 72px;
+  }
+  .panel select, .panel input[type="text"], .panel input[type="password"], .panel input[type="number"] {
+    background: #fff;
+    border: 1px solid var(--aged);
+    color: var(--brush);
+    padding: 6px 10px;
+    border-radius: 3px;
+    font-family: inherit;
+    font-size: 13px;
+  }
+  .panel input[type="text"], .panel input[type="password"] {
+    flex: 1;
+    min-width: 200px;
+  }
+  .section-checkboxes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    flex: 1;
+  }
+  .section-checkboxes label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    background: #fff;
+    border: 1px solid var(--aged);
+    padding: 4px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  .section-checkboxes label.all {
+    background: var(--aged);
+    font-weight: 600;
+  }
+
+  /* ============ STATUS BAR (when exam started) ============ */
+  .status-bar {
+    background: var(--rice);
+    border: 1px solid var(--aged);
+    border-radius: 6px;
+    padding: 12px 18px;
+    margin-bottom: 12px;
+    display: none;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    position: sticky;
+    top: 8px;
+    z-index: 50;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  .status-bar.show { display: flex; }
+  .timer {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--brush);
+    letter-spacing: 1px;
+    font-variant-numeric: tabular-nums;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .timer.warning { color: var(--orange); }
+  .timer.danger { color: var(--seal); animation: blink 1s infinite; }
+  @keyframes blink { 50% { opacity: 0.5; } }
+  .timer-label { font-size: 13px; color: #888; font-weight: 400; }
+
+  .score-display {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .score-chip {
+    background: #fff;
+    border: 1px solid var(--aged);
+    padding: 5px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+  }
+  .score-chip.correct { color: var(--green); border-color: var(--green); }
+  .score-chip.wrong { color: var(--red); border-color: var(--red); }
+  .score-chip.score-total {
+    background: var(--gold);
+    color: var(--rice);
+    border-color: var(--gold);
+    font-weight: 700;
+    font-size: 15px;
+  }
+
+  /* ============ QUESTION GRID ============ */
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  @media (max-width: 720px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+
+  .qcell {
+    background: var(--rice);
+    border: 1px solid var(--aged);
+    border-radius: 5px;
+    padding: 10px 12px;
+    display: flex;
+    gap: 10px;
+    align-items: stretch;
+    min-height: 160px;
+    transition: border-color 0.2s;
+  }
+  .qcell.correct { border-color: var(--green); background: #f1f8f1; }
+  .qcell.wrong { border-color: var(--red); background: #fbf1f1; }
+  .qcell.grading { border-color: var(--gold); }
+
+  .qcell-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .qcell-header {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 4px;
+    flex-wrap: wrap;
+  }
+  .qcell-num {
+    font-size: 12px;
+    color: #888;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .qcell-type {
+    font-size: 11px;
+    color: var(--gold);
+    background: var(--paper);
+    padding: 1px 6px;
+    border-radius: 2px;
+  }
+  .qcell-q {
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--brush);
+    line-height: 1.3;
+    word-break: break-word;
+    margin: 4px 0;
+  }
+  .qcell-q .target {
+    color: var(--seal);
+    font-weight: 700;
+  }
+  .qcell-hint {
+    font-size: 11px;
+    color: #888;
+  }
+
+  /* Answer column - vertical writing mode for direct comparison with handwriting */
+  .qcell-answer-col {
+    flex-shrink: 0;
+    width: 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    visibility: hidden;
+  }
+  .qcell-answer-col.show { visibility: visible; }
+  .qcell-answer-col .label {
+    font-size: 10px;
+    color: #888;
+    margin-bottom: 4px;
+    text-align: center;
+  }
+  .qcell-answer-box {
+    width: 50px;
+    height: 130px;
+    background: #f1f8f1;
+    border: 1px solid var(--green);
+    border-radius: 3px;
+    color: var(--green);
+    font-weight: 700;
+    font-size: 26px;
+    writing-mode: vertical-rl;
+    text-orientation: upright;
+    line-height: 1.05;
+    letter-spacing: 2px;
+    padding: 6px 4px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    overflow: hidden;
+    word-break: break-all;
+    white-space: normal;
+    font-family: "Noto Serif TC", "Noto Sans TC", serif;
+  }
+  /* If answer contains "/" (multiple acceptable), shrink slightly */
+  .qcell-answer-box.has-slash {
+    font-size: 22px;
+  }
+
+  /* Handwriting column - now vertical (80×130) */
+  .qcell-canvas-wrap {
+    flex-shrink: 0;
+    width: 80px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .qcell-canvas-area {
+    width: 80px;
+    height: 130px;
+    background: #fff;
+    border: 1px dashed var(--aged);
+    border-radius: 3px;
+    cursor: crosshair;
+    position: relative;
+    touch-action: none;
+    overflow: hidden;
+  }
+  .qcell-canvas-area::before {
+    content: '✎ 點此書寫';
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #bbb;
+    font-size: 11px;
+    pointer-events: none;
+    writing-mode: vertical-rl;
+    text-orientation: upright;
+  }
+  .qcell-canvas-area.active::before { display: none; }
+  .qcell-canvas-area.locked { background: #f5f5f5; cursor: not-allowed; }
+  .qcell-canvas-area canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  .qcell-actions {
+    display: flex;
+    gap: 4px;
+    justify-content: space-between;
+  }
+  .qcell-btn {
+    background: #fff;
+    border: 1px solid var(--aged);
+    color: var(--brush);
+    padding: 2px 6px;
+    font-size: 11px;
+    border-radius: 2px;
+    cursor: pointer;
+    font-family: inherit;
+    flex: 1;
+  }
+  .qcell-btn:hover { background: var(--paper); }
+  .qcell-status {
+    font-size: 11px;
+    text-align: center;
+    min-height: 14px;
+    color: #888;
+  }
+  .qcell-status.queued { color: var(--gold); }
+  .qcell-status.grading { color: var(--orange); }
+  .qcell-status.correct { color: var(--green); font-weight: 600; }
+  .qcell-status.wrong { color: var(--red); font-weight: 600; }
+  .qcell-status.error { color: var(--seal); }
+
+  /* ============ EMPTY STATE ============ */
+  .empty-state {
+    background: var(--rice);
+    border: 1px solid var(--aged);
+    border-radius: 6px;
+    padding: 60px 20px;
+    text-align: center;
+    color: #666;
+  }
+  .empty-state h2 { color: var(--brush); margin: 0 0 12px; }
+  .empty-state p { margin: 6px 0; font-size: 14px; }
+  .empty-state a { color: var(--gold); }
+
+  /* ============ EXAM RANGE TREE ============ */
+  .range-tree {
+    flex: 1;
+    background: #fff;
+    border: 1px solid var(--aged);
+    border-radius: 3px;
+    padding: 8px 10px;
+    max-height: 280px;
+    overflow-y: auto;
+  }
+  .range-sheet {
+    margin-bottom: 8px;
+  }
+  .range-sheet:last-child { margin-bottom: 0; }
+  .range-sheet-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    color: var(--brush);
+    padding: 4px 0;
+    border-bottom: 1px solid var(--paper);
+    margin-bottom: 4px;
+    cursor: pointer;
+  }
+  .range-sheet-header:hover { background: var(--paper); }
+  .range-lang-tag {
+    font-size: 11px;
+    color: var(--gold);
+    background: var(--paper);
+    padding: 1px 6px;
+    border-radius: 2px;
+    margin-right: 4px;
+  }
+  .range-sheet-count {
+    margin-left: auto;
+    font-size: 12px;
+    color: #999;
+    font-weight: 400;
+  }
+  .range-sections {
+    padding-left: 18px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .range-section {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    color: var(--brush);
+    cursor: pointer;
+    background: var(--paper);
+    padding: 2px 8px;
+    border-radius: 3px;
+    border: 1px solid transparent;
+  }
+  .range-section:hover { border-color: var(--gold); }
+  .range-tree-empty {
+    color: #999;
+    font-size: 13px;
+    text-align: center;
+    padding: 20px;
+  }
+
+  /* ============ TOAST ============ */
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--brush);
+    color: #fff;
+    padding: 10px 18px;
+    border-radius: 4px;
+    font-size: 14px;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+  .toast.error { background: var(--seal); }
+
+  /* ============ MODAL ============ */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: var(--rice);
+    border: 2px solid var(--gold);
+    border-radius: 6px;
+    padding: 24px;
+    max-width: 420px;
+    text-align: center;
+  }
+  .modal h3 { margin-top: 0; color: var(--seal); }
+  .modal-actions { display: flex; gap: 8px; justify-content: center; margin-top: 16px; }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="top-title">
+    <span class="seal">考試</span>
+    <span>字音字形模擬考</span>
+  </div>
+  <div class="top-actions">
+    <a class="top-btn" href="word_test.html">← 回練習模式</a>
+    <button class="top-btn" id="btnLoadLib" onclick="document.getElementById('fileInput').click()">📂 載入題庫</button>
+    <button class="top-btn" id="btnRestartExam" onclick="resetExam()" style="display:none">↺ 重新考試</button>
+    <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none" onchange="handleFileImport(event)">
+  </div>
+</div>
+
+<div class="panel" id="setupPanel">
+  <div class="panel-row">
+    <div class="panel-label">題庫</div>
+    <div id="libraryInfo" style="font-size:13px;color:#666">尚未載入題庫</div>
+    <button class="top-btn" onclick="document.getElementById('fileInput').click()" id="btnLoadLib2">📂 載入題庫</button>
+  </div>
+
+  <div class="panel-row" style="align-items:flex-start">
+    <div class="panel-label" style="padding-top:6px">考試範圍</div>
+    <div class="range-tree" id="rangeTree">
+      <div class="range-tree-empty">請先載入題庫</div>
+    </div>
+  </div>
+
+  <div class="panel-row">
+    <div class="panel-label">題數</div>
+    <select id="questionCount">
+      <option value="20">20 題</option>
+      <option value="50">50 題</option>
+      <option value="100" selected>100 題</option>
+    </select>
+    <span style="font-size:12px;color:#888" id="poolSizeNote"></span>
+  </div>
+
+  <div class="panel-row">
+    <div class="panel-label">時間</div>
+    <select id="examMinutes">
+      <option value="10">10 分鐘</option>
+      <option value="15" selected>15 分鐘</option>
+      <option value="20">20 分鐘</option>
+    </select>
+  </div>
+
+  <div class="panel-row">
+    <div class="panel-label">出題</div>
+    <select id="orderMode">
+      <option value="rand" selected>隨機抽題</option>
+      <option value="seq">依序出題</option>
+    </select>
+  </div>
+
+  <div class="panel-row">
+    <div class="panel-label">AI 批改</div>
+    <select id="aiProvider" onchange="onProviderChange()">
+      <option value="none" selected>不使用 AI</option>
+      <option value="claude">Claude (Anthropic)</option>
+      <option value="openai">OpenAI (GPT-4o)</option>
+      <option value="gemini">Google Gemini</option>
+    </select>
+    <input type="password" id="apiKey" placeholder="貼上 API Key（會存於本機）" style="display:none">
+    <button class="top-btn" id="btnSaveKey" onclick="saveApiKey()" style="display:none">儲存</button>
+  </div>
+
+  <div class="panel-row" id="aiNoteRow" style="display:none">
+    <div class="panel-label"></div>
+    <div style="font-size:12px;color:#888;line-height:1.5">
+      ⚠ API Key 僅儲存於您的瀏覽器 localStorage，不會傳送至任何第三方。<br>
+      費用由您的 API 帳號承擔；批改 100 題約 0.5-2 美元（依供應商與模型而異）。<br>
+      請勿在公用電腦或他人裝置使用。
+    </div>
+  </div>
+
+  <div class="panel-row" style="justify-content:flex-end">
+    <button class="top-btn primary" id="btnStartExam" onclick="startExam()">▶ 開始考試</button>
+  </div>
+</div>
+
+<div class="status-bar" id="statusBar">
+  <div class="timer" id="timer">
+    <span class="timer-label">剩餘時間</span>
+    <span id="timerDisplay">15:00</span>
+  </div>
+  <div class="score-display" id="scoreDisplay" style="display:none">
+    <span class="score-chip correct">✓ 答對 <span id="scoreCorrect">0</span></span>
+    <span class="score-chip wrong">✗ 答錯 <span id="scoreWrong">0</span></span>
+    <span class="score-chip">— 未作答 <span id="scoreBlank">0</span></span>
+    <span class="score-chip score-total">總分 <span id="scoreTotal">0</span>/<span id="scoreMax">0</span></span>
+  </div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap">
+    <button class="top-btn" id="btnShowAnswers" onclick="showAllAnswers()">📋 顯示答案</button>
+    <button class="top-btn primary" id="btnAIGrade" onclick="aiGradeAll()" style="display:none">✦ AI 一鍵批改</button>
+    <button class="top-btn danger" id="btnSubmit" onclick="confirmSubmit()">📤 交卷</button>
+  </div>
+</div>
+
+<div id="mainArea">
+  <div class="empty-state" id="emptyState">
+    <h2>準備開始考試</h2>
+    <p>請在上方設定考試範圍、題數、時間，然後按「開始考試」</p>
+    <p style="margin-top:18px;font-size:13px;color:#888">
+      若尚未載入題庫，請至 <a href="word_test.html">練習模式</a> 載入後再回來
+    </p>
+  </div>
+  <div class="grid" id="examGrid" style="display:none"></div>
+</div>
+
+<div class="modal-overlay" id="timeUpModal">
+  <div class="modal">
+    <h3>⏰ 時間到</h3>
+    <p>考試時間已結束，書寫板已鎖定。</p>
+    <p>可按「顯示答案」對照、或啟用 AI 批改。</p>
+    <div class="modal-actions">
+      <button class="top-btn primary" onclick="document.getElementById('timeUpModal').classList.remove('show')">確定</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="submitModal">
+  <div class="modal">
+    <h3>提前交卷？</h3>
+    <p>確定要提前結束考試？將鎖定所有書寫板。</p>
+    <div class="modal-actions">
+      <button class="top-btn" onclick="document.getElementById('submitModal').classList.remove('show')">取消</button>
+      <button class="top-btn danger" onclick="doSubmit()">確定交卷</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ==================== CONSTANTS ====================
+const LS_LIBRARY_KEY = 'mockExamLibrary_v1';  // 獨立 key，不與 word_test 連動
+const LS_API_PROVIDER = 'mockExamProvider_v1';
+const LS_API_KEYS = 'mockExamApiKeys_v1';
+
+// ==================== STATE ====================
+// library 結構：{filename, meta, sheets:[{name, sheet_meta, sections:[{name, data}]}]}
+let library = null;
+let examQuestions = [];   // [{q, a, sheet_idx, sheet_name, section_name, sheet_meta}]
+let canvases = new Map();
+let examStarted = false;
+let examLocked = false;
+let timerInterval = null;
+let secondsLeft = 0;
+let answersShown = false;
+
+// ==================== LANGUAGE PRESETS ====================
+const LANGUAGE_PRESETS = {
+  '國語': {
+    seal_left: '國語', seal_right: '注音',
+    language: '國語', pinyin_name: '注音',
+    hanzi_hint: '請寫出「　」內之注音',
+    pinyin_hint: '請寫出「　」內對應之漢字',
+    ai_prompt_extra: '國語注音題的聲調符號（ˊ ˇ ˋ ˙）必須正確；輕聲標記在字前的「˙」位置寫對才算正確。'
+  },
+  '臺語': {
+    seal_left: '臺語', seal_right: '臺羅',
+    language: '臺語（臺灣閩南語）', pinyin_name: '臺羅（臺灣閩南語羅馬字拼音）',
+    hanzi_hint: '請寫出「　」內之臺語拼音（臺羅）',
+    pinyin_hint: '請寫出「　」內對應之臺語漢字',
+    ai_prompt_extra: '臺羅拼音題：若答案以「/」分隔，前者為調號版（如 tshi̍h、kú），後者為數字標調版（如 tshih8、ku2），任一寫法皆正確。'
+  },
+  '客語': {
+    seal_left: '客語', seal_right: '客拼',
+    language: '客語', pinyin_name: '客語拼音',
+    hanzi_hint: '請寫出「　」內之客語拼音',
+    pinyin_hint: '請寫出「　」內對應之客語漢字',
+    ai_prompt_extra: '客拼題的聲調符號（ˊ ˇ ˋ ^）必須正確；若答案以「/」分隔表示多種接受答案。'
+  }
+};
+
+function inferLanguageFromSheetName(name) {
+  if (name.includes('國語') || name.includes('華語')) return '國語';
+  if (name.includes('臺語') || name.includes('台語') || name.includes('閩南')) return '臺語';
+  if (name.includes('客語') || name.includes('客家')) return '客語';
+  return null;
+}
+
+function buildSheetMeta(sheetName) {
+  const lang = inferLanguageFromSheetName(sheetName);
+  if (lang && LANGUAGE_PRESETS[lang]) {
+    return { ...LANGUAGE_PRESETS[lang], _inferred_lang: lang };
+  }
+  return {
+    seal_left: '字音', seal_right: '字形',
+    language: '中文', pinyin_name: '拼音',
+    hanzi_hint: '請寫出「　」內之拼音',
+    pinyin_hint: '請寫出「　」內對應之漢字',
+    ai_prompt_extra: '若答案以「/」分隔表示有多種接受答案，任一寫法皆正確。',
+    _inferred_lang: null
+  };
+}
+
+// ==================== LIBRARY LOAD ====================
+function loadLibrary() {
+  try {
+    const raw = localStorage.getItem(LS_LIBRARY_KEY);
+    if (!raw) return null;
+    const lib = JSON.parse(raw);
+    if (lib && lib.sheets && Array.isArray(lib.sheets) && lib.sheets.length > 0) {
+      return lib;
+    }
+  } catch (e) { console.warn(e); }
+  return null;
+}
+
+function saveLibrary() {
+  try {
+    if (library) localStorage.setItem(LS_LIBRARY_KEY, JSON.stringify(library));
+  } catch (e) { console.warn('Save failed:', e); }
+}
+
+// ==================== FILE IMPORT ====================
+async function handleFileImport(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  try {
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type: 'array' });
+    const lib = parseWorkbook(wb, file.name);
+    if (!lib) return;  // parseWorkbook handles error toast
+
+    library = lib;
+    saveLibrary();
+    renderSetup();
+
+    const sheets = lib.sheets || [];
+    const totalQ = sheets.reduce((s, sh) =>
+      s + sh.sections.reduce((ss, sec) => ss + sec.data.length, 0), 0);
+    showToast('✓ 載入成功：' + sheets.length + ' 個題庫、共 ' + totalQ + ' 題');
+  } catch (err) {
+    console.error(err);
+    showToast('檔案讀取失敗：' + err.message, true);
+  } finally {
+    event.target.value = '';
+  }
+}
+
+function parseWorkbook(workbook, filename) {
+  const sheetNames = workbook.SheetNames;
+
+  const globalMeta = {
+    title: filename.replace(/\.(xlsx|xls|csv)$/i, ''),
+    subtitle: ''
+  };
+
+  let settingsSheetName = null;
+  for (const name of sheetNames) {
+    if (/^設定$|^settings$/i.test(name.trim())) {
+      settingsSheetName = name;
+      const settingsSheet = workbook.Sheets[name];
+      const rows = XLSX.utils.sheet_to_json(settingsSheet, { header: 1, defval: '' });
+      rows.forEach(row => {
+        if (!row || row.length < 2) return;
+        const key = String(row[0] || '').trim();
+        const val = String(row[1] || '').trim();
+        if (key && val && (key === 'title' || key === 'subtitle')) {
+          globalMeta[key] = val;
+        }
+      });
+      break;
+    }
+  }
+
+  const sheets = [];
+  for (const sheetName of sheetNames) {
+    if (sheetName === settingsSheetName) continue;
+    const ws = workbook.Sheets[sheetName];
+    const parsed = parseQuestionSheet(ws, sheetName);
+    if (parsed && parsed.sections.length > 0) {
+      sheets.push({
+        name: sheetName,
+        sheet_meta: buildSheetMeta(sheetName),
+        sections: parsed.sections
+      });
+    }
+  }
+
+  if (sheets.length === 0) {
+    showToast('找不到任何有效的題庫工作表', true);
+    return null;
+  }
+
+  return { filename, meta: globalMeta, sheets };
+}
+
+function parseQuestionSheet(sheet, sheetName) {
+  const data = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+  if (data.length === 0) return null;
+
+  const sample = data[0];
+  const keys = Object.keys(sample);
+  function findKey(...candidates) {
+    for (const c of candidates) {
+      const k = keys.find(k => k.toString().toLowerCase().trim() === c.toLowerCase());
+      if (k) return k;
+    }
+    return null;
+  }
+  const kSec = findKey('section', '分類', '類別', '分頁');
+  const kSecName = findKey('section_name', '分類名稱', '類別名稱', '分頁名稱');
+  const kQ = findKey('q', 'question', '題目');
+  const kA = findKey('a', 'answer', '答案');
+
+  if (!kQ || !kA) return null;
+
+  const sectionMap = new Map();
+  data.forEach(row => {
+    const q = String(row[kQ] || '').trim();
+    const a = String(row[kA] || '').trim();
+    if (!q || !a) return;
+
+    let secNum = kSec ? parseInt(row[kSec], 10) : 1;
+    if (!secNum || isNaN(secNum)) secNum = 1;
+    const secName = kSecName ? String(row[kSecName] || '').trim() : '';
+
+    if (!sectionMap.has(secNum)) {
+      sectionMap.set(secNum, { name: secName || ('第' + secNum + '類'), data: [] });
+    } else if (secName && sectionMap.get(secNum).name.startsWith('第')) {
+      sectionMap.get(secNum).name = secName;
+    }
+    sectionMap.get(secNum).data.push({ q, a });
+  });
+
+  if (sectionMap.size === 0) return null;
+
+  const sortedKeys = [...sectionMap.keys()].sort((a, b) => a - b);
+  const sections = sortedKeys.map(k => sectionMap.get(k));
+  return { sections };
+}
+
+// ==================== SETUP RENDER ====================
+function renderSetup() {
+  library = library || loadLibrary();
+
+  if (!library) {
+    document.getElementById('libraryInfo').innerHTML =
+      '<span style="color:var(--seal)">尚未載入題庫</span>';
+    document.getElementById('btnStartExam').disabled = true;
+    document.getElementById('rangeTree').innerHTML =
+      '<div class="range-tree-empty">請先按上方「📂 載入題庫」匯入 Excel 檔</div>';
+    document.getElementById('poolSizeNote').textContent = '';
+    return;
+  }
+
+  const sheets = library.sheets || [];
+  const totalQ = sheets.reduce((s, sh) =>
+    s + sh.sections.reduce((ss, sec) => ss + sec.data.length, 0), 0);
+  document.getElementById('libraryInfo').textContent =
+    (library.filename || '自訂題庫') + '（' + sheets.length + ' 個題庫、共 ' + totalQ + ' 題）';
+  document.getElementById('btnStartExam').disabled = false;
+
+  // Render range tree
+  const tree = document.getElementById('rangeTree');
+  tree.innerHTML = '';
+
+  sheets.forEach((sh, si) => {
+    const sheetDiv = document.createElement('div');
+    sheetDiv.className = 'range-sheet';
+
+    const sheetQ = sh.sections.reduce((s, sec) => s + sec.data.length, 0);
+    const lang = sh.sheet_meta && sh.sheet_meta._inferred_lang;
+    const langTag = lang ? `<span class="range-lang-tag">${lang}</span>` : '';
+
+    const header = document.createElement('div');
+    header.className = 'range-sheet-header';
+    header.innerHTML = `
+      <input type="checkbox" class="sheet-all-cb" data-sheet="${si}" checked
+             onchange="onSheetAllToggle(${si}, this.checked)" onclick="event.stopPropagation()">
+      ${langTag}
+      <span>${escapeHtml(sh.name)}</span>
+      <span class="range-sheet-count">${sheetQ} 題</span>
+    `;
+    sheetDiv.appendChild(header);
+
+    const secWrap = document.createElement('div');
+    secWrap.className = 'range-sections';
+    sh.sections.forEach((sec, ci) => {
+      const label = document.createElement('label');
+      label.className = 'range-section';
+      label.innerHTML = `
+        <input type="checkbox" class="section-cb" data-sheet="${si}" data-section="${ci}" checked
+               onchange="updatePoolSize()">
+        ${escapeHtml(sec.name)} (${sec.data.length})
+      `;
+      secWrap.appendChild(label);
+    });
+    sheetDiv.appendChild(secWrap);
+
+    tree.appendChild(sheetDiv);
+  });
+
+  updatePoolSize();
+}
+
+function onSheetAllToggle(sheetIdx, checked) {
+  document.querySelectorAll(`.section-cb[data-sheet="${sheetIdx}"]`).forEach(cb => {
+    cb.checked = checked;
+  });
+  updatePoolSize();
+}
+
+function updatePoolSize() {
+  if (!library) return;
+  let pool = 0;
+  document.querySelectorAll('.section-cb:checked').forEach(cb => {
+    const si = +cb.dataset.sheet;
+    const ci = +cb.dataset.section;
+    const sec = library.sheets[si] && library.sheets[si].sections[ci];
+    if (sec) pool += sec.data.length;
+  });
+  document.getElementById('poolSizeNote').textContent = '（可選範圍共 ' + pool + ' 題）';
+
+  // Sync sheet-level checkbox state
+  library.sheets.forEach((_, si) => {
+    const sectionCbs = [...document.querySelectorAll(`.section-cb[data-sheet="${si}"]`)];
+    const sheetCb = document.querySelector(`.sheet-all-cb[data-sheet="${si}"]`);
+    if (!sheetCb || sectionCbs.length === 0) return;
+    const allChecked = sectionCbs.every(cb => cb.checked);
+    const noneChecked = sectionCbs.every(cb => !cb.checked);
+    sheetCb.checked = allChecked;
+    sheetCb.indeterminate = !allChecked && !noneChecked;
+  });
+}
+
+// ==================== API KEY MANAGEMENT ====================
+function getStoredKeys() {
+  try { return JSON.parse(localStorage.getItem(LS_API_KEYS) || '{}'); }
+  catch (e) { return {}; }
+}
+function saveStoredKeys(keys) {
+  localStorage.setItem(LS_API_KEYS, JSON.stringify(keys));
+}
+
+function onProviderChange() {
+  const provider = document.getElementById('aiProvider').value;
+  localStorage.setItem(LS_API_PROVIDER, provider);
+  const keyInput = document.getElementById('apiKey');
+  const saveBtn = document.getElementById('btnSaveKey');
+  const noteRow = document.getElementById('aiNoteRow');
+
+  if (provider === 'none') {
+    keyInput.style.display = 'none';
+    saveBtn.style.display = 'none';
+    noteRow.style.display = 'none';
+  } else {
+    keyInput.style.display = '';
+    saveBtn.style.display = '';
+    noteRow.style.display = '';
+    const keys = getStoredKeys();
+    keyInput.value = keys[provider] || '';
+    keyInput.placeholder = provider === 'claude'
+      ? 'sk-ant-... (Anthropic API Key)'
+      : provider === 'openai'
+        ? 'sk-... (OpenAI API Key)'
+        : 'AIza... (Google AI Studio API Key)';
+  }
+}
+
+function saveApiKey() {
+  const provider = document.getElementById('aiProvider').value;
+  if (provider === 'none') return;
+  const key = document.getElementById('apiKey').value.trim();
+  if (!key) { showToast('請輸入 API Key', true); return; }
+  const keys = getStoredKeys();
+  keys[provider] = key;
+  saveStoredKeys(keys);
+  showToast('✓ Key 已儲存到本機');
+}
+
+// ==================== START EXAM ====================
+function startExam() {
+  if (!library) { showToast('未載入題庫', true); return; }
+  const selectedCbs = [...document.querySelectorAll('.section-cb:checked')];
+  if (selectedCbs.length === 0) { showToast('請至少選一個分類', true); return; }
+
+  // Build pool with sheet info attached (each question knows its sheet's meta for AI prompts)
+  const pool = [];
+  selectedCbs.forEach(cb => {
+    const si = +cb.dataset.sheet;
+    const ci = +cb.dataset.section;
+    const sh = library.sheets[si];
+    if (!sh) return;
+    const sec = sh.sections[ci];
+    if (!sec) return;
+    sec.data.forEach(item => {
+      pool.push({
+        q: item.q,
+        a: item.a,
+        sheet_idx: si,
+        sheet_name: sh.name,
+        section_name: sec.name,
+        sheet_meta: sh.sheet_meta
+      });
+    });
+  });
+
+  if (pool.length === 0) { showToast('沒有可考題目', true); return; }
+
+  const wantCount = parseInt(document.getElementById('questionCount').value, 10);
+  const orderMode = document.getElementById('orderMode').value;
+
+  let questions;
+  if (orderMode === 'rand') {
+    questions = [...pool];
+    for (let i = questions.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [questions[i], questions[j]] = [questions[j], questions[i]];
+    }
+    questions = questions.slice(0, wantCount);
+  } else {
+    questions = pool.slice(0, wantCount);
+  }
+
+  examQuestions = questions;
+
+  const provider = document.getElementById('aiProvider').value;
+  if (provider !== 'none') {
+    const keys = getStoredKeys();
+    if (!keys[provider]) {
+      showToast('請先儲存 ' + provider.toUpperCase() + ' 的 API Key', true);
+      return;
+    }
+  }
+
+  document.getElementById('setupPanel').style.display = 'none';
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('examGrid').style.display = '';
+  document.getElementById('statusBar').classList.add('show');
+  document.getElementById('btnRestartExam').style.display = '';
+  if (provider !== 'none') {
+    document.getElementById('btnAIGrade').style.display = '';
+  }
+
+  examStarted = true;
+  examLocked = false;
+  answersShown = false;
+
+  renderGrid();
+  startTimer();
+}
+
+function renderGrid() {
+  const grid = document.getElementById('examGrid');
+  grid.innerHTML = '';
+  examQuestions.forEach((item, idx) => {
+    const cell = document.createElement('div');
+    cell.className = 'qcell';
+    cell.id = 'qcell-' + idx;
+
+    const isHanzi = isQuestionHanzi(item.q);
+    const meta = item.sheet_meta || {};
+    const hint = isHanzi ? (meta.hanzi_hint || '寫拼音') : (meta.pinyin_hint || '寫漢字');
+
+    const m = item.q.match(/「([^」]+)」/);
+    const displayQ = m
+      ? escapeHtml(item.q).replace('「' + escapeHtml(m[1]) + '」', '<span class="target">「' + escapeHtml(m[1]) + '」</span>')
+      : escapeHtml(item.q);
+
+    // Show sheet name as subtle source tag (only if multiple sheets in pool)
+    const uniqueSheets = new Set(examQuestions.map(q => q.sheet_name));
+    const sourceTag = uniqueSheets.size > 1
+      ? `<span style="font-size:10px;color:#aaa;margin-left:6px">${escapeHtml(item.sheet_name)}</span>`
+      : '';
+
+    cell.innerHTML = `
+      <div class="qcell-info">
+        <div>
+          <div class="qcell-header">
+            <span class="qcell-num">第 ${idx + 1} 題</span>
+            <span class="qcell-type">${isHanzi ? '寫拼音' : '寫漢字'}</span>${sourceTag}
+          </div>
+          <div class="qcell-q">${displayQ}</div>
+          <div class="qcell-hint">${escapeHtml(hint)}</div>
+        </div>
+      </div>
+      <div class="qcell-answer-col" id="ans-col-${idx}">
+        <div class="label">答案</div>
+        <div class="qcell-answer-box" id="ans-text-${idx}"></div>
+      </div>
+      <div class="qcell-canvas-wrap">
+        <div class="qcell-canvas-area" id="canvas-area-${idx}" data-idx="${idx}"></div>
+        <div class="qcell-actions">
+          <button class="qcell-btn" onclick="clearOneCanvas(${idx})">清除</button>
+        </div>
+        <div class="qcell-status" id="status-${idx}"></div>
+      </div>
+    `;
+    grid.appendChild(cell);
+
+    // Attach lazy-init pointerdown to the area
+    const area = cell.querySelector('.qcell-canvas-area');
+    area.addEventListener('pointerdown', firstTouchHandler);
+  });
+}
+
+// First touch on an unactivated canvas area: activate, then forward the event
+function firstTouchHandler(e) {
+  if (examLocked) return;
+  const area = e.currentTarget;
+  const idx = parseInt(area.dataset.idx, 10);
+  if (canvases.has(idx)) return; // already activated, real handler takes over
+
+  // Activate
+  activateCanvas(idx);
+
+  // Forward this initial pointerdown to the new canvas
+  const state = canvases.get(idx);
+  if (!state) return;
+  const r = state.canvas.getBoundingClientRect();
+  const x = e.clientX - r.left;
+  const y = e.clientY - r.top;
+  state.drawing = true;
+  state.hasContent = true;
+  state.lastX = x; state.lastY = y;
+  try { state.canvas.setPointerCapture(e.pointerId); } catch(_) {}
+  state.ctx.beginPath();
+  state.ctx.arc(x, y, 1, 0, Math.PI * 2);
+  state.ctx.fillStyle = '#1a1a1a';
+  state.ctx.fill();
+  // Remove the bootstrap handler — real one is now active
+  area.removeEventListener('pointerdown', firstTouchHandler);
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
+function isQuestionHanzi(q) {
+  const m = q.match(/「([^」]+)」/);
+  const target = m ? m[1] : q;
+  return /[\u3400-\u9FFF\uF900-\uFAFF]|[\uD840-\uD87F][\uDC00-\uDFFF]/.test(target);
+}
+
+// ==================== CANVAS (LAZY INIT) ====================
+function activateCanvas(idx) {
+  if (examLocked) return;
+  if (canvases.has(idx)) return;
+
+  const area = document.getElementById('canvas-area-' + idx);
+  area.classList.add('active');
+
+  const canvas = document.createElement('canvas');
+  area.appendChild(canvas);
+
+  const rect = area.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.lineWidth = 2.2;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = '#1a1a1a';
+
+  const state = { canvas, ctx, drawing: false, hasContent: false, lastX: 0, lastY: 0 };
+  canvases.set(idx, state);
+
+  function getPos(e) {
+    const r = canvas.getBoundingClientRect();
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
+  }
+  canvas.addEventListener('pointerdown', e => {
+    if (examLocked) return;
+    e.preventDefault();
+    try { canvas.setPointerCapture(e.pointerId); } catch(_) {}
+    state.drawing = true;
+    state.hasContent = true;
+    const p = getPos(e);
+    state.lastX = p.x; state.lastY = p.y;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 1, 0, Math.PI * 2);
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fill();
+  });
+  canvas.addEventListener('pointermove', e => {
+    if (!state.drawing || examLocked) return;
+    e.preventDefault();
+    const p = getPos(e);
+    ctx.beginPath();
+    ctx.moveTo(state.lastX, state.lastY);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+    state.lastX = p.x; state.lastY = p.y;
+  });
+  function endDraw(e) {
+    state.drawing = false;
+    try { canvas.releasePointerCapture(e.pointerId); } catch(_) {}
+  }
+  canvas.addEventListener('pointerup', endDraw);
+  canvas.addEventListener('pointercancel', endDraw);
+  canvas.addEventListener('pointerleave', endDraw);
+}
+
+function clearOneCanvas(idx) {
+  if (examLocked) return;
+  const state = canvases.get(idx);
+  if (!state) return;
+  const { canvas, ctx } = state;
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.restore();
+  state.hasContent = false;
+}
+
+function lockAllCanvases() {
+  examLocked = true;
+  document.querySelectorAll('.qcell-canvas-area').forEach(el => {
+    el.classList.add('locked');
+  });
+}
+
+// ==================== TIMER ====================
+function startTimer() {
+  const minutes = parseInt(document.getElementById('examMinutes').value, 10);
+  secondsLeft = minutes * 60;
+  updateTimerDisplay();
+  timerInterval = setInterval(() => {
+    secondsLeft--;
+    updateTimerDisplay();
+    if (secondsLeft <= 0) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      onTimeUp();
+    }
+  }, 1000);
+}
+
+function updateTimerDisplay() {
+  const m = Math.floor(secondsLeft / 60);
+  const s = secondsLeft % 60;
+  document.getElementById('timerDisplay').textContent =
+    String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+  const timer = document.getElementById('timer');
+  timer.classList.toggle('danger', secondsLeft <= 60);
+  timer.classList.toggle('warning', secondsLeft > 60 && secondsLeft <= 180);
+}
+
+function stopTimer() {
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+}
+
+function onTimeUp() {
+  lockAllCanvases();
+  document.getElementById('timeUpModal').classList.add('show');
+  document.getElementById('timer').innerHTML = '<span class="timer-label">時間到</span><span style="margin-left:6px">00:00</span>';
+}
+
+// ==================== SUBMIT / RESET ====================
+function confirmSubmit() { document.getElementById('submitModal').classList.add('show'); }
+
+function doSubmit() {
+  document.getElementById('submitModal').classList.remove('show');
+  stopTimer();
+  lockAllCanvases();
+  document.getElementById('timer').innerHTML = '<span class="timer-label">已交卷</span><span style="margin-left:6px">00:00</span>';
+  showToast('✓ 已交卷，書寫板已鎖定');
+}
+
+function resetExam() {
+  if (!confirm('確定要重新考試？目前作答將會清除。')) return;
+  stopTimer();
+  canvases.clear();
+  examQuestions = [];
+  examStarted = false;
+  examLocked = false;
+  answersShown = false;
+  document.getElementById('setupPanel').style.display = '';
+  document.getElementById('emptyState').style.display = '';
+  document.getElementById('examGrid').style.display = 'none';
+  document.getElementById('examGrid').innerHTML = '';
+  document.getElementById('statusBar').classList.remove('show');
+  document.getElementById('btnRestartExam').style.display = 'none';
+  document.getElementById('scoreDisplay').style.display = 'none';
+  document.getElementById('btnAIGrade').style.display = 'none';
+  document.getElementById('btnShowAnswers').textContent = '📋 顯示答案';
+  document.getElementById('btnShowAnswers').disabled = false;
+  document.getElementById('btnAIGrade').disabled = false;
+  document.getElementById('btnAIGrade').textContent = '✦ AI 一鍵批改';
+}
+
+// ==================== SHOW ANSWERS ====================
+function showAllAnswers() {
+  examQuestions.forEach((item, idx) => {
+    const ansBox = document.getElementById('ans-text-' + idx);
+    // For pinyin answers with "/" (e.g. "tshi̍h/tshih8"), show only the first form
+    // for cleaner vertical display; the alternate is still accepted by AI grading.
+    let displayAns = item.a;
+    if (displayAns.includes('/')) {
+      // Mark with smaller font
+      ansBox.classList.add('has-slash');
+    }
+    ansBox.textContent = displayAns;
+    document.getElementById('ans-col-' + idx).classList.add('show');
+  });
+  answersShown = true;
+  document.getElementById('btnShowAnswers').textContent = '✓ 答案已顯示';
+  document.getElementById('btnShowAnswers').disabled = true;
+}
+
+// ==================== AI GRADING (PARALLEL) ====================
+async function aiGradeAll() {
+  const provider = document.getElementById('aiProvider').value;
+  if (provider === 'none') return;
+  const keys = getStoredKeys();
+  const apiKey = keys[provider];
+  if (!apiKey) { showToast('API Key 不見了，請重設', true); return; }
+
+  document.getElementById('btnAIGrade').disabled = true;
+
+  const tasks = [];
+  examQuestions.forEach((item, idx) => {
+    const state = canvases.get(idx);
+    if (!state || !state.hasContent) {
+      document.getElementById('status-' + idx).textContent = '— 未作答';
+      document.getElementById('status-' + idx).className = 'qcell-status';
+      return;
+    }
+    document.getElementById('status-' + idx).textContent = '⏳ 排隊中';
+    document.getElementById('status-' + idx).className = 'qcell-status queued';
+    tasks.push({ idx, item, state });
+  });
+
+  if (tasks.length === 0) {
+    showToast('沒有任何作答', true);
+    document.getElementById('btnAIGrade').disabled = false;
+    return;
+  }
+
+  const CONCURRENCY = 5;
+  let completed = 0;
+
+  async function worker(queue) {
+    while (queue.length > 0) {
+      const task = queue.shift();
+      try {
+        document.getElementById('status-' + task.idx).textContent = '🔄 批改中';
+        document.getElementById('status-' + task.idx).className = 'qcell-status grading';
+        document.getElementById('qcell-' + task.idx).classList.add('grading');
+
+        const imageData = task.state.canvas.toDataURL('image/png').split(',')[1];
+        const result = await gradeOne(provider, apiKey, task.item, imageData);
+        renderGradeResult(task.idx, task.item, result);
+      } catch (err) {
+        document.getElementById('status-' + task.idx).textContent = '⚠ ' + (err.message.slice(0, 20));
+        document.getElementById('status-' + task.idx).className = 'qcell-status error';
+        document.getElementById('qcell-' + task.idx).classList.remove('grading');
+      }
+      completed++;
+      document.getElementById('btnAIGrade').textContent =
+        '✦ 批改中 ' + completed + '/' + tasks.length;
+      updateScoreDisplay();
+    }
+  }
+
+  const queue = [...tasks];
+  const workers = Array.from({ length: Math.min(CONCURRENCY, queue.length) }, () => worker(queue));
+  await Promise.all(workers);
+
+  document.getElementById('btnAIGrade').textContent = '✓ 批改完成';
+  if (!answersShown) showAllAnswers();
+  updateScoreDisplay();
+}
+
+function renderGradeResult(idx, item, result) {
+  const cell = document.getElementById('qcell-' + idx);
+  const status = document.getElementById('status-' + idx);
+  cell.classList.remove('grading');
+
+  const verdict = (result.verdict || '').toLowerCase();
+  if (verdict === 'correct') {
+    cell.classList.add('correct');
+    status.className = 'qcell-status correct';
+    status.textContent = '✓ ' + (result.recognized || '正確');
+  } else if (verdict === 'wrong') {
+    cell.classList.add('wrong');
+    status.className = 'qcell-status wrong';
+    status.textContent = '✗ ' + (result.recognized || '錯誤');
+  } else {
+    status.className = 'qcell-status error';
+    status.textContent = '? ' + (result.recognized || '無法判讀');
+  }
+  cell.dataset.verdict = verdict;
+}
+
+function updateScoreDisplay() {
+  let correct = 0, wrong = 0, blank = 0;
+  examQuestions.forEach((_, idx) => {
+    const cell = document.getElementById('qcell-' + idx);
+    const verdict = cell.dataset.verdict;
+    if (verdict === 'correct') correct++;
+    else if (verdict === 'wrong') wrong++;
+    else blank++;
+  });
+  document.getElementById('scoreCorrect').textContent = correct;
+  document.getElementById('scoreWrong').textContent = wrong;
+  document.getElementById('scoreBlank').textContent = blank;
+  document.getElementById('scoreMax').textContent = examQuestions.length;
+  const pct = examQuestions.length > 0
+    ? Math.round(correct / examQuestions.length * 100)
+    : 0;
+  document.getElementById('scoreTotal').textContent = pct;
+  document.getElementById('scoreDisplay').style.display = '';
+}
+
+// ==================== AI API CALLS ====================
+async function gradeOne(provider, apiKey, item, imageBase64) {
+  const isHanziQ = isQuestionHanzi(item.q);
+  const meta = item.sheet_meta || {};
+  const lang = meta.language || '中文';
+  const pinyinName = meta.pinyin_name || '拼音';
+  const answerType = isHanziQ ? (lang + '拼音（' + pinyinName + '）') : (lang + '漢字');
+  const extraNote = meta.ai_prompt_extra || '若答案以「/」分隔表示有多種接受答案，任一寫法皆正確。';
+
+  const prompt = `你是${lang}字音字形評分老師。
+題目：「${item.q}」
+要求學生寫出：${answerType}
+正確答案：${item.a}
+
+請辨識圖片中的手寫內容（書寫板尺寸 80×130 像素，使用者習慣**直書**從上到下書寫；若為拼音題，注音符號或聲調記號也是由上往下排列），然後評判是否正確。
+
+注意：
+- 書寫方向：直書（top-to-bottom）。${!isHanziQ
+    ? '漢字結構由上到下、由左到右組合。'
+    : (lang === '國語' || lang === '中文'
+        ? '注音符號的順序：聲母（如ㄐ、ㄆ、ㄓ）→介音→韻母→聲調符號（ˊˇˋ˙）。聲調符號通常標在韻母右側或下方。'
+        : '拼音字母由上到下、由左到右排列；聲調符號可能在字母右側或上方。')}
+- ${extraNote}
+- 漢字題：字形必須正確，異體字若意義相同可接受
+- 若手寫筆跡潦草、輕重不均，請盡力判斷，但若實在無法辨識，verdict 填 "unclear"
+
+請只回覆以下JSON格式，不要加任何其他文字：
+{"recognized":"辨識到的手寫內容","verdict":"correct|wrong|unclear","comment":"一句話說明（最多15字）"}`;
+
+  if (provider === 'claude') return callClaude(apiKey, prompt, imageBase64);
+  if (provider === 'openai') return callOpenAI(apiKey, prompt, imageBase64);
+  if (provider === 'gemini') return callGemini(apiKey, prompt, imageBase64);
+  throw new Error('未知的 provider');
+}
+
+function parseJsonFromText(text) {
+  let t = (text || '').trim();
+  t = t.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+  const start = t.indexOf('{');
+  const end = t.lastIndexOf('}');
+  if (start === -1 || end === -1) throw new Error('回覆非 JSON');
+  return JSON.parse(t.slice(start, end + 1));
+}
+
+async function callClaude(apiKey, prompt, imageBase64) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 200,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: 'image/png', data: imageBase64 } },
+          { type: 'text', text: prompt }
+        ]
+      }]
+    })
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error('Claude ' + res.status + ': ' + err.slice(0, 80));
+  }
+  const data = await res.json();
+  const text = data.content?.[0]?.text || '';
+  return parseJsonFromText(text);
+}
+
+async function callOpenAI(apiKey, prompt, imageBase64) {
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + apiKey
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o',
+      max_tokens: 200,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'text', text: prompt },
+          { type: 'image_url', image_url: { url: 'data:image/png;base64,' + imageBase64 } }
+        ]
+      }],
+      response_format: { type: 'json_object' }
+    })
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error('OpenAI ' + res.status + ': ' + err.slice(0, 80));
+  }
+  const data = await res.json();
+  const text = data.choices?.[0]?.message?.content || '';
+  return parseJsonFromText(text);
+}
+
+async function callGemini(apiKey, prompt, imageBase64) {
+  const model = 'gemini-2.5-flash';
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{
+        parts: [
+          { text: prompt },
+          { inline_data: { mime_type: 'image/png', data: imageBase64 } }
+        ]
+      }],
+      generationConfig: {
+        responseMimeType: 'application/json',
+        maxOutputTokens: 200
+      }
+    })
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error('Gemini ' + res.status + ': ' + err.slice(0, 80));
+  }
+  const data = await res.json();
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  return parseJsonFromText(text);
+}
+
+// ==================== TOAST ====================
+let _toastTimer = null;
+function showToast(msg, isError) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.toggle('error', !!isError);
+  t.classList.add('show');
+  if (_toastTimer) clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+// ==================== INIT ====================
+renderSetup();
+const savedProvider = localStorage.getItem(LS_API_PROVIDER);
+if (savedProvider) {
+  document.getElementById('aiProvider').value = savedProvider;
+  onProviderChange();
+}
+</script>
+</body>
+</html>
