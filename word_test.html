@@ -1,0 +1,2439 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>字音字形練習帖</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;500&family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --ink: #1a1208;
+    --paper: #f5efe3;
+    --rice: #faf6ee;
+    --aged: #e8dcc8;
+    --red: #c0392b;
+    --gold: #b5860d;
+    --brush: #2c1810;
+    --seal: #9b1b1b;
+    --shadow: rgba(26,18,8,0.12);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--paper);
+    font-family: 'Noto Serif TC', serif;
+    color: var(--ink);
+    min-height: 100vh;
+    overflow-x: hidden;
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(180,160,120,0.08) 39px, rgba(180,160,120,0.08) 40px),
+      repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(180,160,120,0.06) 39px, rgba(180,160,120,0.06) 40px);
+  }
+
+  /* Paper texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 20px 16px 40px;
+  }
+
+  /* Header */
+  header {
+    text-align: center;
+    padding: 28px 0 20px;
+    border-bottom: 2px solid var(--gold);
+    margin-bottom: 24px;
+    position: relative;
+  }
+  header::after {
+    content: '';
+    display: block;
+    width: 60%;
+    height: 1px;
+    background: var(--gold);
+    margin: 6px auto 0;
+    opacity: 0.4;
+  }
+
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 4px;
+  }
+
+  .seal {
+    width: 48px;
+    height: 48px;
+    background: var(--seal);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Ma Shan Zheng', serif;
+    font-size: 18px;
+    writing-mode: vertical-rl;
+    letter-spacing: 2px;
+    flex-shrink: 0;
+    box-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+  }
+
+  h1 {
+    font-family: 'Ma Shan Zheng', serif;
+    font-size: clamp(24px, 5vw, 40px);
+    font-weight: 400;
+    color: var(--brush);
+    letter-spacing: 0.1em;
+    line-height: 1.2;
+  }
+
+  .subtitle {
+    font-size: 13px;
+    color: var(--gold);
+    letter-spacing: 0.2em;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-weight: 300;
+    margin-top: 4px;
+  }
+
+  /* Controls */
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    padding: 16px;
+    background: var(--rice);
+    border: 1px solid var(--aged);
+    box-shadow: inset 0 1px 3px var(--shadow);
+  }
+
+  .ctrl-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .ctrl-label {
+    font-size: 13px;
+    color: var(--gold);
+    letter-spacing: 0.1em;
+    font-family: 'Noto Sans TC', sans-serif;
+    white-space: nowrap;
+  }
+
+  .btn-group {
+    display: flex;
+    gap: 0;
+    border: 1px solid var(--gold);
+    overflow: hidden;
+  }
+
+  .btn-toggle {
+    padding: 6px 14px;
+    font-size: 13px;
+    font-family: 'Noto Serif TC', serif;
+    background: transparent;
+    color: var(--gold);
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.05em;
+  }
+  .btn-toggle + .btn-toggle {
+    border-left: 1px solid var(--gold);
+  }
+  .btn-toggle.active {
+    background: var(--gold);
+    color: var(--rice);
+  }
+  .btn-toggle:hover:not(.active) {
+    background: rgba(181,134,13,0.1);
+  }
+
+  .btn-action {
+    padding: 7px 18px;
+    font-size: 13px;
+    font-family: 'Noto Serif TC', serif;
+    background: var(--brush);
+    color: var(--aged);
+    border: none;
+    cursor: pointer;
+    letter-spacing: 0.1em;
+    transition: all 0.2s;
+    box-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+  }
+  .btn-action:hover {
+    background: var(--ink);
+    transform: translate(-1px,-1px);
+    box-shadow: 3px 3px 0 rgba(0,0,0,0.25);
+  }
+  .btn-action:active {
+    transform: translate(1px,1px);
+    box-shadow: 1px 1px 0 rgba(0,0,0,0.2);
+  }
+
+  /* Timer */
+  .timer-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .timer-display {
+    font-family: 'Ma Shan Zheng', serif;
+    font-size: 22px;
+    color: var(--brush);
+    letter-spacing: 0.05em;
+    min-width: 58px;
+    text-align: center;
+    transition: color 0.3s;
+  }
+  .timer-display.urgent { color: var(--seal); animation: pulse 0.8s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.55} }
+  .timer-display.done { color: #888; }
+
+  .btn-timer {
+    padding: 5px 12px;
+    font-size: 13px;
+    font-family: 'Noto Sans TC', sans-serif;
+    background: transparent;
+    color: var(--gold);
+    border: 1px solid var(--gold);
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    transition: all 0.2s;
+  }
+  .btn-timer:hover { background: rgba(181,134,13,0.1); }
+  .btn-timer.running { color: var(--seal); border-color: var(--seal); }
+
+  /* Mark button on card */
+  .btn-mark {
+    position: absolute;
+    bottom: 12px;
+    right: 16px;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-family: 'Noto Sans TC', sans-serif;
+    background: transparent;
+    color: rgba(26,18,8,0.35);
+    border: 1px solid var(--aged);
+    cursor: pointer;
+    letter-spacing: 0.1em;
+    transition: all 0.2s;
+  }
+  .btn-mark:hover { border-color: var(--gold); color: var(--gold); }
+  .btn-mark.marked {
+    background: rgba(181,134,13,0.12);
+    color: var(--gold);
+    border-color: var(--gold);
+  }
+
+  /* Bookmarks panel */
+  .bookmarks-panel {
+    margin-top: 20px;
+    border: 1px solid var(--aged);
+    background: var(--rice);
+  }
+  .bookmarks-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--aged);
+    cursor: pointer;
+    user-select: none;
+  }
+  .bookmarks-title {
+    font-size: 13px;
+    color: var(--gold);
+    letter-spacing: 0.15em;
+    font-family: 'Noto Sans TC', sans-serif;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .bookmark-count {
+    background: var(--gold);
+    color: var(--rice);
+    font-size: 11px;
+    padding: 1px 7px;
+    border-radius: 10px;
+    font-family: 'Noto Sans TC', sans-serif;
+  }
+  .bookmarks-toggle-icon {
+    font-size: 12px;
+    color: var(--gold);
+    transition: transform 0.2s;
+  }
+  .bookmarks-toggle-icon.open { transform: rotate(180deg); }
+
+  .bookmarks-body {
+    display: none;
+    padding: 12px 16px 16px;
+    max-height: 340px;
+    overflow-y: auto;
+  }
+  .bookmarks-body.open { display: block; }
+
+  .bm-empty {
+    font-size: 13px;
+    color: rgba(26,18,8,0.35);
+    text-align: center;
+    padding: 16px 0;
+    font-family: 'Noto Sans TC', sans-serif;
+    letter-spacing: 0.1em;
+  }
+
+  .bm-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .bm-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: var(--paper);
+    border: 1px solid var(--aged);
+    font-family: 'Noto Serif TC', serif;
+    font-size: 14px;
+    color: var(--brush);
+  }
+  .bm-section-tag {
+    font-size: 10px;
+    padding: 2px 6px;
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    font-family: 'Noto Sans TC', sans-serif;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .bm-q { flex: 1; }
+  .bm-a {
+    color: var(--seal);
+    font-weight: 600;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+  .bm-remove {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: rgba(26,18,8,0.3);
+    font-size: 14px;
+    padding: 0 2px;
+    transition: color 0.15s;
+    flex-shrink: 0;
+  }
+  .bm-remove:hover { color: var(--seal); }
+
+  .bm-practice-btn {
+    margin-top: 12px;
+    width: 100%;
+    padding: 8px;
+    font-size: 13px;
+    font-family: 'Noto Serif TC', serif;
+    background: var(--brush);
+    color: var(--aged);
+    border: none;
+    cursor: pointer;
+    letter-spacing: 0.1em;
+    transition: all 0.2s;
+  }
+  .bm-practice-btn:hover { background: var(--ink); }
+  .bm-clear-btn {
+    margin-top: 6px;
+    width: 100%;
+    padding: 6px;
+    font-size: 12px;
+    font-family: 'Noto Sans TC', sans-serif;
+    background: transparent;
+    color: rgba(26,18,8,0.4);
+    border: 1px solid var(--aged);
+    cursor: pointer;
+    letter-spacing: 0.1em;
+    transition: all 0.2s;
+  }
+  .bm-clear-btn:hover { border-color: var(--seal); color: var(--seal); }
+
+  /* Timer expired overlay */
+  .time-up-banner {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    background: var(--seal);
+    color: var(--rice);
+    text-align: center;
+    padding: 10px;
+    font-family: 'Ma Shan Zheng', serif;
+    font-size: 20px;
+    letter-spacing: 0.2em;
+    z-index: 999;
+    animation: slideDown 0.3s ease;
+  }
+  @keyframes slideDown { from{transform:translateY(-100%)} to{transform:translateY(0)} }
+  .time-up-banner.show { display: block; }
+
+  /* Progress */
+  .progress-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .progress-bar {
+    flex: 1;
+    height: 4px;
+    background: var(--aged);
+    position: relative;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--gold);
+    transition: width 0.4s ease;
+  }
+  .progress-text {
+    font-size: 12px;
+    color: var(--gold);
+    font-family: 'Noto Sans TC', sans-serif;
+    white-space: nowrap;
+    min-width: 64px;
+    text-align: right;
+  }
+
+  /* Main card */
+  .card {
+    background: var(--rice);
+    border: 1px solid var(--aged);
+    box-shadow: 4px 4px 0 var(--aged), 0 2px 16px var(--shadow);
+    padding: 32px 28px 28px;
+    margin-bottom: 20px;
+    position: relative;
+    min-height: 180px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 8px; left: 8px; right: -8px; bottom: -8px;
+    border: 1px solid var(--aged);
+    z-index: -1;
+    opacity: 0.5;
+  }
+
+  .question-type {
+    position: absolute;
+    top: 12px;
+    left: 16px;
+    font-size: 11px;
+    color: var(--gold);
+    font-family: 'Noto Sans TC', sans-serif;
+    letter-spacing: 0.15em;
+    opacity: 0.8;
+  }
+
+  .question-num {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    font-size: 11px;
+    color: var(--gold);
+    font-family: 'Noto Sans TC', sans-serif;
+    letter-spacing: 0.1em;
+  }
+
+  .question-main {
+    text-align: center;
+    padding: 8px 0;
+  }
+
+  .question-hint {
+    font-size: 13px;
+    color: rgba(26,18,8,0.45);
+    font-family: 'Noto Sans TC', sans-serif;
+    margin-bottom: 10px;
+    letter-spacing: 0.1em;
+  }
+
+  .question-text {
+    font-family: 'Noto Serif TC', serif;
+    font-size: clamp(28px, 7vw, 52px);
+    font-weight: 600;
+    color: var(--brush);
+    line-height: 1.3;
+    letter-spacing: 0.1em;
+  }
+
+  .question-text .target {
+    color: var(--red);
+    border-bottom: 3px solid var(--red);
+    padding-bottom: 2px;
+  }
+
+  .question-sub {
+    font-size: clamp(14px, 3vw, 20px);
+    color: rgba(26,18,8,0.5);
+    margin-top: 6px;
+    letter-spacing: 0.15em;
+    font-family: 'Noto Sans TC', sans-serif;
+  }
+
+  /* Answer reveal */
+  .answer-section {
+    background: rgba(181,134,13,0.06);
+    border: 1px dashed var(--gold);
+    padding: 14px 20px;
+    text-align: center;
+    margin-bottom: 16px;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+    position: relative;
+  }
+
+  .answer-hidden {
+    font-size: 13px;
+    color: rgba(26,18,8,0.35);
+    letter-spacing: 0.2em;
+    font-family: 'Noto Sans TC', sans-serif;
+  }
+
+  .answer-revealed {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .answer-label {
+    font-size: 11px;
+    color: var(--seal);
+    letter-spacing: 0.2em;
+    font-family: 'Noto Sans TC', sans-serif;
+  }
+
+  .answer-value {
+    font-family: 'Noto Serif TC', serif;
+    font-size: clamp(22px, 5vw, 36px);
+    font-weight: 700;
+    color: var(--seal);
+    letter-spacing: 0.15em;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Canvas whiteboard */
+  .whiteboard-wrap {
+    margin-bottom: 16px;
+    position: relative;
+  }
+
+  .wb-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--aged);
+    border: 1px solid rgba(181,134,13,0.4);
+    border-bottom: none;
+  }
+
+  .wb-label {
+    font-size: 11px;
+    color: var(--gold);
+    letter-spacing: 0.15em;
+    font-family: 'Noto Sans TC', sans-serif;
+    flex: 1;
+  }
+
+  .wb-tool {
+    width: 28px;
+    height: 28px;
+    border: 1px solid rgba(26,18,8,0.2);
+    background: var(--rice);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    transition: all 0.15s;
+    color: var(--brush);
+  }
+  .wb-tool:hover { background: var(--paper); }
+  .wb-tool.active {
+    background: var(--brush);
+    color: var(--rice);
+    border-color: var(--brush);
+  }
+
+  .size-dot {
+    border-radius: 50%;
+    background: var(--brush);
+    pointer-events: none;
+  }
+
+  .color-swatch {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .color-swatch:hover, .color-swatch.active { transform: scale(1.25); border-color: var(--brush); }
+
+  canvas#wb {
+    display: block;
+    width: 100%;
+    height: 240px;
+    background: #fff;
+    border: 1px solid rgba(181,134,13,0.3);
+    cursor: crosshair;
+    touch-action: none;
+  }
+
+  /* Action buttons row */
+  .action-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .btn-reveal {
+    padding: 10px 28px;
+    font-family: 'Noto Serif TC', serif;
+    font-size: 15px;
+    background: var(--seal);
+    color: var(--rice);
+    border: none;
+    cursor: pointer;
+    letter-spacing: 0.15em;
+    box-shadow: 3px 3px 0 rgba(0,0,0,0.25);
+    transition: all 0.2s;
+    flex: 1;
+    max-width: 200px;
+  }
+  .btn-reveal:hover {
+    background: var(--red);
+    transform: translate(-1px,-1px);
+    box-shadow: 4px 4px 0 rgba(0,0,0,0.25);
+  }
+  .btn-reveal:active {
+    transform: translate(1px,1px);
+    box-shadow: 1px 1px 0 rgba(0,0,0,0.2);
+  }
+
+  .btn-next {
+    padding: 10px 28px;
+    font-family: 'Noto Serif TC', serif;
+    font-size: 15px;
+    background: var(--brush);
+    color: var(--aged);
+    border: none;
+    cursor: pointer;
+    letter-spacing: 0.15em;
+    box-shadow: 3px 3px 0 rgba(0,0,0,0.2);
+    transition: all 0.2s;
+    flex: 1;
+    max-width: 200px;
+  }
+  .btn-next:hover {
+    background: var(--ink);
+    transform: translate(-1px,-1px);
+    box-shadow: 4px 4px 0 rgba(0,0,0,0.25);
+  }
+  .btn-next:active {
+    transform: translate(1px,1px);
+  }
+
+  .btn-clear-wb {
+    padding: 10px 16px;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 13px;
+    background: transparent;
+    color: rgba(26,18,8,0.5);
+    border: 1px solid var(--aged);
+    cursor: pointer;
+    letter-spacing: 0.1em;
+    transition: all 0.2s;
+  }
+  .btn-clear-wb:hover {
+    border-color: var(--brush);
+    color: var(--brush);
+  }
+
+  /* AI Grading */
+  .grading-result {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    animation: fadeIn 0.3s ease;
+  }
+  .grading-recognized {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 10px;
+    background: rgba(26,18,8,0.04);
+    border: 1px solid var(--aged);
+  }
+  .grading-label {
+    font-size: 11px;
+    color: var(--gold);
+    letter-spacing: 0.15em;
+    font-family: 'Noto Sans TC', sans-serif;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .grading-recog-text {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 16px;
+    color: var(--brush);
+    letter-spacing: 0.1em;
+  }
+  .grading-verdict {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 10px 16px;
+    border: 2px solid var(--aged);
+  }
+  .grading-verdict.correct {
+    background: rgba(34,120,60,0.07);
+    border-color: #22783c;
+  }
+  .grading-verdict.wrong {
+    background: rgba(155,27,27,0.07);
+    border-color: var(--seal);
+  }
+  .grading-verdict.partial {
+    background: rgba(181,134,13,0.08);
+    border-color: var(--gold);
+  }
+  .verdict-icon {
+    font-size: 26px;
+    line-height: 1;
+  }
+  .verdict-text {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 16px;
+    color: var(--brush);
+    letter-spacing: 0.05em;
+  }
+  .grading-correct-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 10px;
+    background: rgba(155,27,27,0.04);
+    border: 1px dashed var(--seal);
+  }
+  .grading-correct-val {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--seal);
+    letter-spacing: 0.15em;
+  }
+  .grading-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    width: 100%;
+  }
+  .loading-dots {
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 14px;
+    color: var(--gold);
+    letter-spacing: 0.2em;
+  }
+  .loading-dots span {
+    animation: blink 1.2s infinite;
+    opacity: 0;
+  }
+  .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes blink { 0%,80%,100%{opacity:0} 40%{opacity:1} }
+
+  .btn-grade {
+    padding: 10px 22px;
+    font-family: 'Noto Serif TC', serif;
+    font-size: 15px;
+    background: #1a4a2e;
+    color: #d4edd9;
+    border: none;
+    cursor: pointer;
+    letter-spacing: 0.1em;
+    box-shadow: 3px 3px 0 rgba(0,0,0,0.2);
+    transition: all 0.2s;
+    flex: 1;
+    max-width: 160px;
+  }
+  .btn-grade:hover {
+    background: #12381f;
+    transform: translate(-1px,-1px);
+    box-shadow: 4px 4px 0 rgba(0,0,0,0.25);
+  }
+  .btn-grade:active { transform: translate(1px,1px); }
+  .btn-grade:disabled {
+    background: #888;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  /* Score summary */
+  .score-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0 0;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .score-chip {
+    font-size: 12px;
+    font-family: 'Noto Sans TC', sans-serif;
+    padding: 3px 12px;
+    border: 1px solid var(--aged);
+    background: var(--rice);
+    letter-spacing: 0.05em;
+    color: var(--brush);
+  }
+  .score-chip.correct-chip { border-color: #22783c; color: #22783c; background: rgba(34,120,60,0.06); }
+  .score-chip.wrong-chip { border-color: var(--seal); color: var(--seal); background: rgba(155,27,27,0.06); }
+
+  /* Section tabs */
+  .section-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    margin-bottom: 16px;
+    border-bottom: 2px solid var(--gold);
+  }
+
+  .section-tab {
+    padding: 8px 14px;
+    font-size: 12px;
+    font-family: 'Noto Serif TC', serif;
+    background: transparent;
+    color: rgba(26,18,8,0.5);
+    border: 1px solid var(--aged);
+    border-bottom: none;
+    cursor: pointer;
+    margin-right: 4px;
+    margin-bottom: 0;
+    letter-spacing: 0.05em;
+    transition: all 0.2s;
+    position: relative;
+    bottom: -2px;
+    white-space: nowrap;
+  }
+  .section-tab.active {
+    background: var(--rice);
+    color: var(--brush);
+    border-color: var(--gold);
+    border-bottom: 2px solid var(--rice);
+    font-weight: 600;
+  }
+
+  /* Sheet selector */
+  .sheet-selector-wrap {
+    background: var(--rice);
+    border: 1px solid var(--gold);
+    border-radius: 4px;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .sheet-selector-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--brush);
+    flex-shrink: 0;
+  }
+  #sheetSelector {
+    flex: 1;
+    background: #fff;
+    border: 1px solid var(--aged);
+    color: var(--brush);
+    padding: 6px 10px;
+    border-radius: 3px;
+    font-family: inherit;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #sheetSelector:focus {
+    outline: none;
+    border-color: var(--gold);
+  }
+
+  /* Top bar with import/settings buttons */
+  .top-bar {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+  .top-bar-group {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .top-btn {
+    background: var(--rice);
+    border: 1px solid var(--aged);
+    color: var(--brush);
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .top-btn:hover {
+    background: var(--aged);
+  }
+  .top-btn.active {
+    background: var(--seal);
+    color: #fff;
+    border-color: var(--seal);
+  }
+
+  /* Settings panel */
+  .settings-panel {
+    background: var(--rice);
+    border: 1px solid var(--aged);
+    border-radius: 4px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    display: none;
+  }
+  .settings-panel.open { display: block; }
+  .settings-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(180,160,120,0.2);
+  }
+  .settings-row:last-child { border-bottom: none; }
+  .settings-label {
+    font-size: 14px;
+    color: var(--brush);
+    flex: 1;
+  }
+  .settings-desc {
+    font-size: 12px;
+    color: #888;
+    margin-top: 2px;
+  }
+  .settings-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+  .settings-btn {
+    background: #fff;
+    border: 1px solid var(--aged);
+    color: var(--brush);
+    padding: 5px 10px;
+    border-radius: 3px;
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .settings-btn:hover { background: var(--paper); }
+  .settings-btn.danger { color: var(--seal); border-color: var(--seal); }
+
+  /* Toggle switch */
+  .toggle {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    flex-shrink: 0;
+  }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background: #ccc;
+    border-radius: 24px;
+    transition: 0.3s;
+  }
+  .toggle-slider::before {
+    content: '';
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    left: 3px;
+    bottom: 3px;
+    background: white;
+    border-radius: 50%;
+    transition: 0.3s;
+  }
+  .toggle input:checked + .toggle-slider {
+    background: var(--seal);
+  }
+  .toggle input:checked + .toggle-slider::before {
+    transform: translateX(20px);
+  }
+
+  /* Import status */
+  .import-status {
+    font-size: 12px;
+    color: var(--gold);
+    margin-top: 4px;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--brush);
+    color: #fff;
+    padding: 10px 18px;
+    border-radius: 4px;
+    font-size: 14px;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+  .toast.error { background: var(--seal); }
+
+  /* Hidden when no AI */
+  .ai-only { display: none; }
+  body.ai-enabled .ai-only { display: ''; }
+
+  /* Responsive */
+  @media (max-width: 540px) {
+    .ctrl-group { flex-wrap: wrap; justify-content: center; }
+    .controls { padding: 12px 10px; }
+    .card { padding: 24px 16px 20px; }
+    canvas#wb { height: 180px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- Top bar -->
+  <div class="top-bar">
+    <div class="top-bar-group">
+      <a href="mock_exam.html" class="top-btn" style="background:var(--seal);color:#fff;border-color:var(--seal);text-decoration:none">📝 模擬考</a>
+    </div>
+    <div class="top-bar-group">
+      <button class="top-btn" onclick="document.getElementById('fileInput').click()">📂 載入題庫</button>
+      <button class="top-btn" id="btnDownloadTemplate" onclick="downloadTemplate()">📄 下載範本</button>
+      <button class="top-btn" id="btnSettings" onclick="toggleSettings()">⚙ 設定</button>
+    </div>
+    <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFileImport(event)">
+  </div>
+
+  <!-- Settings panel -->
+  <div class="settings-panel" id="settingsPanel">
+    <div class="settings-row">
+      <div>
+        <div class="settings-label">啟用 AI 批閱</div>
+        <div class="settings-desc">使用 Claude API 自動辨識手寫並批改。需要網路連線。</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="aiToggle" onchange="toggleAI()">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+    <div class="settings-row">
+      <div>
+        <div class="settings-label">目前題庫</div>
+        <div class="settings-desc" id="currentLibraryDesc">尚未載入題庫</div>
+      </div>
+      <div class="settings-actions">
+        <button class="settings-btn" onclick="document.getElementById('fileInput').click()">更換</button>
+        <button class="settings-btn danger" onclick="resetToBuiltin()">清除題庫</button>
+      </div>
+    </div>
+    <div class="settings-row">
+      <div>
+        <div class="settings-label">清除所有標記</div>
+        <div class="settings-desc">移除所有「需要加強練習」的題目記錄</div>
+      </div>
+      <button class="settings-btn danger" onclick="clearAllMarksFromSettings()">清除</button>
+    </div>
+  </div>
+
+  <header>
+    <div class="header-top">
+      <div class="seal" id="sealLeft">字音</div>
+      <h1 id="mainTitle">字音字形練習帖</h1>
+      <div class="seal" id="sealRight">字形</div>
+    </div>
+    <div class="subtitle" id="mainSubtitle">通用字音字形測驗・支援國語、臺語、客語</div>
+  </header>
+
+  <!-- Sheet selector (only shown if library has sheets) -->
+  <div class="sheet-selector-wrap" id="sheetSelectorWrap" style="display:none">
+    <label class="sheet-selector-label">📚 選擇題庫</label>
+    <select id="sheetSelector" onchange="switchSheet(this.value)"></select>
+  </div>
+
+  <!-- Section tabs -->
+  <div class="section-tabs" id="sectionTabs">
+    <!-- Tabs are generated dynamically -->
+  </div>
+
+  <!-- Time up banner -->
+  <div class="time-up-banner" id="timeUpBanner">⏱ 時間到！Ten minutes is up!</div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <div class="ctrl-group">
+      <span class="ctrl-label">出題方式</span>
+      <div class="btn-group">
+        <button class="btn-toggle active" id="btnSeq" onclick="setMode('seq')">依序</button>
+        <button class="btn-toggle" id="btnRand" onclick="setMode('rand')">隨機</button>
+      </div>
+    </div>
+    <div class="ctrl-group timer-wrap">
+      <span class="ctrl-label">計時</span>
+      <div class="timer-display" id="timerDisplay">10:00</div>
+      <button class="btn-timer" id="btnTimer" onclick="toggleTimer()">開始</button>
+      <button class="btn-timer" onclick="resetTimer()" title="重設計時器" style="padding:5px 8px;">↺</button>
+    </div>
+    <div class="ctrl-group">
+      <button class="btn-action" onclick="restartQuiz()">↺ 重新開始</button>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-bar-wrap">
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill" style="width:0%"></div>
+    </div>
+    <div class="progress-text" id="progressText">0 / 100</div>
+  </div>
+  <div class="score-bar" id="scoreBar">
+    <span class="score-chip correct-chip" id="scoreCorrect">✓ 答對 0</span>
+    <span class="score-chip wrong-chip" id="scoreWrong">✗ 答錯 0</span>
+    <span class="score-chip" id="scoreSkip">— 未批閱 0</span>
+  </div>
+
+  <!-- Question Card -->
+  <div class="card">
+    <div class="question-type" id="questionType">漢字→拼音</div>
+    <div class="question-num" id="questionNum">第 1 題</div>
+    <div class="question-main" id="questionMain">
+      <div class="question-hint" id="questionHint">請寫出「」內之拼音</div>
+      <div class="question-text" id="questionText">—</div>
+    </div>
+    <button class="btn-mark" id="btnMark" onclick="toggleMark()">☆ 標記練習</button>
+  </div>
+
+  <!-- Answer -->
+  <div class="answer-section" id="answerSection">
+    <div class="answer-hidden" id="answerHidden">書寫後按「顯示答案」對照</div>
+    <div class="answer-revealed" id="answerRevealed">
+      <div class="answer-label">正確答案</div>
+      <div class="answer-value" id="answerValue">—</div>
+    </div>
+    <!-- AI grading result -->
+    <div class="grading-result" id="gradingResult" style="display:none">
+      <div class="grading-recognized">
+        <span class="grading-label">辨識內容</span>
+        <span class="grading-recog-text" id="gradingRecogText">—</span>
+      </div>
+      <div class="grading-verdict" id="gradingVerdict">
+        <span class="verdict-icon" id="verdictIcon">—</span>
+        <span class="verdict-text" id="verdictText">—</span>
+      </div>
+      <div class="grading-correct-row" id="gradingCorrectRow" style="display:none">
+        <span class="grading-label">正確答案</span>
+        <span class="grading-correct-val" id="gradingCorrectVal">—</span>
+      </div>
+    </div>
+    <div class="grading-loading" id="gradingLoading" style="display:none">
+      <span class="loading-dots">批閱中<span>.</span><span>.</span><span>.</span></span>
+    </div>
+  </div>
+
+  <!-- Whiteboard -->
+  <div class="whiteboard-wrap">
+    <div class="wb-toolbar">
+      <span class="wb-label">✏ 書寫板（支援 Apple Pencil）</span>
+      <!-- Pen sizes -->
+      <div class="wb-tool active" id="sizeS" onclick="setSize(2)" title="細筆">
+        <div class="size-dot" style="width:4px;height:4px"></div>
+      </div>
+      <div class="wb-tool" id="sizeM" onclick="setSize(5)" title="中筆">
+        <div class="size-dot" style="width:8px;height:8px"></div>
+      </div>
+      <div class="wb-tool" id="sizeL" onclick="setSize(10)" title="粗筆">
+        <div class="size-dot" style="width:14px;height:14px"></div>
+      </div>
+      <!-- Colors -->
+      <div class="color-swatch active" id="colorBlack" style="background:#1a1208" onclick="setColor('#1a1208')" title="墨黑"></div>
+      <div class="color-swatch" id="colorRed" style="background:#c0392b" onclick="setColor('#c0392b')" title="硃紅"></div>
+      <div class="color-swatch" id="colorBlue" style="background:#1a4a8a" onclick="setColor('#1a4a8a')" title="靛藍"></div>
+      <!-- Eraser -->
+      <div class="wb-tool" id="eraserBtn" onclick="toggleEraser()" title="橡皮擦">⌫</div>
+    </div>
+    <canvas id="wb"></canvas>
+  </div>
+
+  <!-- Actions -->
+  <div class="action-row">
+    <button class="btn-clear-wb" onclick="clearCanvas()">清除書寫板</button>
+    <button class="btn-grade ai-only" id="btnGrade" onclick="gradeHandwriting()">✦ AI 批閱</button>
+    <button class="btn-reveal" id="btnReveal" onclick="revealAnswer()">顯示答案</button>
+    <button class="btn-next" onclick="nextQuestion()">下一題 →</button>
+  </div>
+
+  <!-- Bookmarks Panel -->
+  <div class="bookmarks-panel" id="bookmarksPanel">
+    <div class="bookmarks-header" onclick="toggleBookmarksPanel()">
+      <div class="bookmarks-title">
+        ★ 需要加強練習
+        <span class="bookmark-count" id="bookmarkCount">0</span>
+      </div>
+      <div class="bookmarks-toggle-icon" id="bmToggleIcon">▼</div>
+    </div>
+    <div class="bookmarks-body" id="bookmarksBody">
+      <div class="bm-empty" id="bmEmpty">尚未標記任何題目</div>
+      <div class="bm-list" id="bmList"></div>
+      <button class="bm-practice-btn" id="bmPracticeBtn" onclick="practiceMarked()" style="display:none">★ 只練習已標記題目</button>
+      <button class="bm-clear-btn" id="bmClearBtn" onclick="clearAllMarks()" style="display:none">清除全部標記</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Toast notification -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ==================== DATA ====================
+// Default library: empty. Users load their own from Excel.
+const BUILTIN_LIBRARY = {
+  filename: '',
+  meta: {
+    title: '字音字形練習帖',
+    subtitle: '通用字音字形測驗・支援國語、臺語、客語'
+  },
+  sheets: []
+};
+
+let currentLibrary = BUILTIN_LIBRARY;
+let currentSheetIdx = 0;  // index into currentLibrary.sheets
+
+// Helper: get current active sheet (or null if no sheets)
+function getCurrentSheet() {
+  if (!currentLibrary.sheets || currentLibrary.sheets.length === 0) return null;
+  return currentLibrary.sheets[currentSheetIdx] || currentLibrary.sheets[0];
+}
+
+// Helper: get current sheet's meta (sheet_meta), falling back to defaults
+function getCurrentMeta() {
+  const sh = getCurrentSheet();
+  if (sh && sh.sheet_meta) return sh.sheet_meta;
+  return {
+    seal_left: '字音',
+    seal_right: '字形',
+    language: '中文',
+    pinyin_name: '拼音',
+    hanzi_hint: '請寫出「　」內之拼音',
+    pinyin_hint: '請寫出「　」內對應之漢字',
+    ai_prompt_extra: '若答案以「/」分隔表示有多種接受答案，任一寫法皆正確。'
+  };
+}
+
+// Helper: get current sheet's sections
+function getCurrentSections() {
+  const sh = getCurrentSheet();
+  return sh ? sh.sections : [];
+}
+
+// Language inference defaults — used when parsing sheet names
+const LANGUAGE_PRESETS = {
+  '國語': {
+    seal_left: '國語', seal_right: '注音',
+    language: '國語', pinyin_name: '注音',
+    hanzi_hint: '請寫出「　」內之注音',
+    pinyin_hint: '請寫出「　」內對應之漢字',
+    ai_prompt_extra: '國語注音題的聲調符號（ˊ ˇ ˋ ˙）必須正確；輕聲標記在字前的「˙」位置寫對才算正確。'
+  },
+  '臺語': {
+    seal_left: '臺語', seal_right: '臺羅',
+    language: '臺語（臺灣閩南語）', pinyin_name: '臺羅（臺灣閩南語羅馬字拼音）',
+    hanzi_hint: '請寫出「　」內之臺語拼音（臺羅）',
+    pinyin_hint: '請寫出「　」內對應之臺語漢字',
+    ai_prompt_extra: '臺羅拼音題：若答案以「/」分隔，前者為調號版（如 tshi̍h、kú），後者為數字標調版（如 tshih8、ku2），任一寫法皆正確。'
+  },
+  '客語': {
+    seal_left: '客語', seal_right: '客拼',
+    language: '客語', pinyin_name: '客語拼音',
+    hanzi_hint: '請寫出「　」內之客語拼音',
+    pinyin_hint: '請寫出「　」內對應之客語漢字',
+    ai_prompt_extra: '客拼題的聲調符號（ˊ ˇ ˋ ^）必須正確；若答案以「/」分隔表示多種接受答案。'
+  }
+};
+
+function inferLanguageFromSheetName(name) {
+  // Returns the language key ('國語', '臺語', '客語') or null
+  if (name.includes('國語') || name.includes('華語')) return '國語';
+  if (name.includes('臺語') || name.includes('台語') || name.includes('閩南')) return '臺語';
+  if (name.includes('客語') || name.includes('客家')) return '客語';
+  return null;
+}
+
+function buildSheetMeta(sheetName) {
+  // Build a sheet_meta object based on sheet name; fall back to neutral defaults
+  const lang = inferLanguageFromSheetName(sheetName);
+  if (lang && LANGUAGE_PRESETS[lang]) {
+    return { ...LANGUAGE_PRESETS[lang], _inferred_lang: lang };
+  }
+  return {
+    seal_left: '字音', seal_right: '字形',
+    language: '中文', pinyin_name: '拼音',
+    hanzi_hint: '請寫出「　」內之拼音',
+    pinyin_hint: '請寫出「　」內對應之漢字',
+    ai_prompt_extra: '若答案以「/」分隔表示有多種接受答案，任一寫法皆正確。',
+    _inferred_lang: null
+  };
+}
+
+// ==================== STATE ====================
+let currentSection = 1;
+let mode = 'seq';
+let currentData = [];
+let order = [];
+let idx = 0;
+let answered = false;
+
+function getSectionData(n) {
+  // n is 1-based
+  const sections = getCurrentSections();
+  const sec = sections[n-1];
+  return sec ? sec.data : [];
+}
+function getSectionName(n) {
+  const sections = getCurrentSections();
+  const sec = sections[n-1];
+  return sec ? sec.name : '';
+}
+
+function buildOrder(len) {
+  order = Array.from({length: len}, (_,i) => i);
+  if (mode === 'rand') {
+    for (let i = len-1; i > 0; i--) {
+      const j = Math.floor(Math.random()*(i+1));
+      [order[i],order[j]] = [order[j],order[i]];
+    }
+  }
+}
+
+function renderTabs() {
+  const tabsEl = document.getElementById('sectionTabs');
+  tabsEl.innerHTML = '';
+  const chineseNum = ['一','二','三','四','五','六','七','八','九','十'];
+  const sections = getCurrentSections();
+  sections.forEach((sec, i) => {
+    const n = i + 1;
+    const btn = document.createElement('button');
+    btn.className = 'section-tab' + (n === currentSection ? ' active' : '');
+    btn.id = 'tab' + n;
+    btn.onclick = () => switchSection(n);
+    btn.textContent = (chineseNum[i] || n) + '、' + sec.name;
+    tabsEl.appendChild(btn);
+  });
+}
+
+function switchSection(n) {
+  currentSection = n;
+  const sections = getCurrentSections();
+  sections.forEach((_, i) => {
+    const tab = document.getElementById('tab' + (i+1));
+    if (tab) tab.classList.toggle('active', (i+1) === n);
+  });
+  currentData = [...getSectionData(n)];
+  restartQuiz();
+}
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('btnSeq').classList.toggle('active', m==='seq');
+  document.getElementById('btnRand').classList.toggle('active', m==='rand');
+  restartQuiz();
+}
+
+function restartQuiz() {
+  idx = 0;
+  buildOrder(currentData.length);
+  resetScores();
+  showQuestion();
+}
+
+function getTargetWord(q) {
+  // Extract 「」content
+  const m = q.match(/「([^」]+)」/);
+  if (!m) return {display: q, target: ''};
+  const target = m[1];
+  const display = q.replace('「'+target+'」', '<span class="target">'+target+'</span>');
+  return {display, target};
+}
+
+function showQuestion() {
+  answered = false;
+  hideAnswer();
+  clearCanvas();
+
+  // No sheets loaded at all
+  if (!currentLibrary.sheets || currentLibrary.sheets.length === 0) {
+    document.getElementById('questionMain').innerHTML =
+      '<div class="question-text" style="font-size:22px;line-height:1.6">尚未載入題庫</div>' +
+      '<div class="question-sub" style="margin-top:12px;font-size:14px;color:#666">' +
+      '請點右上「📂 載入題庫」匯入 Excel 檔案<br>' +
+      '或點「📄 下載範本」取得題庫範本' +
+      '</div>';
+    document.getElementById('questionType').textContent = '';
+    document.getElementById('questionNum').textContent = '';
+    document.getElementById('progressText').textContent = '0 / 0';
+    document.getElementById('progressFill').style.width = '0%';
+    document.getElementById('questionHint').textContent = '';
+    return;
+  }
+
+  // Library has sheets but current sheet has no sections
+  const sections = getCurrentSections();
+  if (sections.length === 0) {
+    document.getElementById('questionMain').innerHTML =
+      '<div class="question-text" style="font-size:22px">此題庫沒有題目</div>';
+    document.getElementById('questionType').textContent = '';
+    document.getElementById('questionNum').textContent = '';
+    document.getElementById('progressText').textContent = '0 / 0';
+    document.getElementById('progressFill').style.width = '0%';
+    document.getElementById('questionHint').textContent = '';
+    return;
+  }
+
+  const item = currentData[order[idx]];
+  const total = currentData.length;
+  if (!item) {
+    // Empty section within sheet
+    document.getElementById('questionMain').innerHTML = '<div class="question-text" style="font-size:22px">此分類沒有題目</div>';
+    document.getElementById('questionType').textContent = getSectionName(currentSection);
+    document.getElementById('questionNum').textContent = '';
+    document.getElementById('progressText').textContent = '0 / 0';
+    document.getElementById('progressFill').style.width = '0%';
+    return;
+  }
+
+  // Progress
+  const pct = Math.round((idx/total)*100);
+  document.getElementById('progressFill').style.width = pct+'%';
+  document.getElementById('progressText').textContent = (idx+1)+' / '+total;
+
+  // Type label: derive from question content
+  const isHanziToPinyin = isQuestionHanzi(item.q);
+  const sectionName = getSectionName(currentSection);
+  document.getElementById('questionType').textContent = sectionName;
+  document.getElementById('questionNum').textContent = '第 '+(order[idx]+1)+' 題';
+
+  const meta = getCurrentMeta();
+  const hint = isHanziToPinyin ? meta.hanzi_hint : meta.pinyin_hint;
+  document.getElementById('questionHint').textContent = hint;
+
+  // Render question
+  const {display, target} = getTargetWord(item.q);
+  document.getElementById('questionText').innerHTML = display;
+  updateMarkButton();
+}
+
+// Determine if the bracketed content is Hanzi (CJK ideographs) or pinyin
+function isQuestionHanzi(q) {
+  const m = q.match(/「([^」]+)」/);
+  const target = m ? m[1] : q;
+  // CJK Unified Ideographs and extensions
+  return /[\u3400-\u9FFF\uF900-\uFAFF]|[\uD840-\uD87F][\uDC00-\uDFFF]/.test(target);
+}
+
+function revealAnswer() {
+  if (answered) return;
+  answered = true;
+  const item = currentData[order[idx]];
+  document.getElementById('answerValue').textContent = item.a;
+  document.getElementById('answerHidden').style.display = 'none';
+  const rev = document.getElementById('answerRevealed');
+  rev.style.display = 'flex';
+  document.getElementById('answerSection').style.background = 'rgba(155,27,27,0.05)';
+  document.getElementById('answerSection').style.borderColor = 'var(--seal)';
+}
+
+function hideAnswer() {
+  document.getElementById('answerHidden').style.display = '';
+  const rev = document.getElementById('answerRevealed');
+  rev.style.display = 'none';
+  document.getElementById('answerSection').style.background = '';
+  document.getElementById('answerSection').style.borderColor = '';
+}
+
+function nextQuestion() {
+  if (idx < currentData.length - 1) {
+    idx++;
+    showQuestion();
+  } else {
+    // End
+    document.getElementById('questionMain').innerHTML = '<div class="question-text" style="font-size:32px">🎉 全部完成！</div><div class="question-sub">共 '+currentData.length+' 題作答完畢</div>';
+    document.getElementById('questionType').textContent = '完成';
+    document.getElementById('progressFill').style.width = '100%';
+    document.getElementById('progressText').textContent = currentData.length+' / '+currentData.length;
+    hideAnswer();
+  }
+}
+
+// ==================== CANVAS ====================
+const canvas = document.getElementById('wb');
+const ctx = canvas.getContext('2d');
+let painting = false;
+let lastX = 0, lastY = 0;
+let penSize = 2;
+let penColor = '#1a1208';
+let isEraser = false;
+
+function resizeCanvas() {
+  const w = canvas.offsetWidth;
+  const h = canvas.offsetHeight;
+  const imageData = ctx.getImageData(0,0,canvas.width,canvas.height);
+  canvas.width = w * window.devicePixelRatio;
+  canvas.height = h * window.devicePixelRatio;
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0,0,w,h);
+}
+
+function getPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.offsetWidth / canvas.offsetWidth;
+  if (e.touches) {
+    const t = e.touches[0];
+    return [(t.clientX - rect.left), (t.clientY - rect.top)];
+  }
+  return [e.clientX - rect.left, e.clientY - rect.top];
+}
+
+function startDraw(e) {
+  e.preventDefault();
+  painting = true;
+  const [x,y] = getPos(e);
+  lastX = x; lastY = y;
+  ctx.beginPath();
+  ctx.arc(x, y, (isEraser ? penSize*4 : penSize)/2, 0, Math.PI*2);
+  ctx.fillStyle = isEraser ? '#fff' : penColor;
+  ctx.fill();
+}
+
+function draw(e) {
+  e.preventDefault();
+  if (!painting) return;
+  const [x,y] = getPos(e);
+  ctx.beginPath();
+  ctx.moveTo(lastX, lastY);
+  ctx.lineTo(x, y);
+  ctx.strokeStyle = isEraser ? '#fff' : penColor;
+  ctx.lineWidth = isEraser ? penSize*8 : penSize;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+  lastX = x; lastY = y;
+}
+
+function endDraw(e) { painting = false; }
+
+canvas.addEventListener('mousedown', startDraw);
+canvas.addEventListener('mousemove', draw);
+canvas.addEventListener('mouseup', endDraw);
+canvas.addEventListener('mouseleave', endDraw);
+canvas.addEventListener('touchstart', startDraw, {passive:false});
+canvas.addEventListener('touchmove', draw, {passive:false});
+canvas.addEventListener('touchend', endDraw);
+
+function setSize(s) {
+  penSize = s;
+  isEraser = false;
+  document.getElementById('eraserBtn').classList.remove('active');
+  document.getElementById('sizeS').classList.toggle('active', s===2);
+  document.getElementById('sizeM').classList.toggle('active', s===5);
+  document.getElementById('sizeL').classList.toggle('active', s===10);
+}
+
+function setColor(c) {
+  penColor = c;
+  isEraser = false;
+  document.getElementById('eraserBtn').classList.remove('active');
+  document.querySelectorAll('.color-swatch').forEach(el => el.classList.remove('active'));
+  if (c==='#1a1208') document.getElementById('colorBlack').classList.add('active');
+  if (c==='#c0392b') document.getElementById('colorRed').classList.add('active');
+  if (c==='#1a4a8a') document.getElementById('colorBlue').classList.add('active');
+}
+
+function toggleEraser() {
+  isEraser = !isEraser;
+  document.getElementById('eraserBtn').classList.toggle('active', isEraser);
+  if (isEraser) {
+    document.getElementById('sizeS').classList.remove('active');
+    document.getElementById('sizeM').classList.remove('active');
+    document.getElementById('sizeL').classList.remove('active');
+  }
+  canvas.style.cursor = isEraser ? 'cell' : 'crosshair';
+}
+
+function clearCanvas() {
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
+}
+
+// ==================== TIMER ====================
+let timerSeconds = 600; // 10 min
+let timerInterval = null;
+let timerRunning = false;
+
+function formatTime(s) {
+  const m = Math.floor(s/60);
+  const sec = s%60;
+  return String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
+}
+
+function updateTimerDisplay() {
+  const el = document.getElementById('timerDisplay');
+  el.textContent = formatTime(timerSeconds);
+  el.classList.toggle('urgent', timerSeconds <= 60 && timerSeconds > 0);
+  el.classList.toggle('done', timerSeconds === 0);
+}
+
+function toggleTimer() {
+  if (timerSeconds === 0) { resetTimer(); return; }
+  if (timerRunning) {
+    clearInterval(timerInterval);
+    timerRunning = false;
+    document.getElementById('btnTimer').textContent = '繼續';
+    document.getElementById('btnTimer').classList.remove('running');
+  } else {
+    timerRunning = true;
+    document.getElementById('btnTimer').textContent = '暫停';
+    document.getElementById('btnTimer').classList.add('running');
+    timerInterval = setInterval(() => {
+      timerSeconds--;
+      updateTimerDisplay();
+      if (timerSeconds <= 0) {
+        clearInterval(timerInterval);
+        timerRunning = false;
+        document.getElementById('btnTimer').textContent = '重設';
+        document.getElementById('btnTimer').classList.remove('running');
+        const banner = document.getElementById('timeUpBanner');
+        banner.classList.add('show');
+        setTimeout(() => banner.classList.remove('show'), 4000);
+      }
+    }, 1000);
+  }
+}
+
+function resetTimer() {
+  clearInterval(timerInterval);
+  timerRunning = false;
+  timerSeconds = 600;
+  updateTimerDisplay();
+  document.getElementById('btnTimer').textContent = '開始';
+  document.getElementById('btnTimer').classList.remove('running');
+  document.getElementById('timerDisplay').classList.remove('urgent','done');
+}
+
+// ==================== BOOKMARKS ====================
+// key: "section-originalIndex", value: {q, a, section, num}
+let bookmarks = {};
+let isPracticeMode = false;
+let practiceOrder = [];
+let practiceIdx = 0;
+
+function getSectionLabel(n) {
+  return getSectionName(n) || ('第' + n + '類');
+}
+
+function getBookmarkKey() {
+  const sh = getCurrentSheet();
+  const sheetName = sh ? sh.name : '_default';
+  return sheetName + '\u0001' + currentSection + '-' + order[idx];
+}
+
+// Get only the bookmarks belonging to the current sheet
+function getCurrentSheetBookmarks() {
+  const sh = getCurrentSheet();
+  if (!sh) return {};
+  const prefix = sh.name + '\u0001';
+  const out = {};
+  for (const k of Object.keys(bookmarks)) {
+    if (k.startsWith(prefix)) out[k] = bookmarks[k];
+  }
+  return out;
+}
+
+function toggleMark() {
+  if (isPracticeMode) return;
+  const key = getBookmarkKey();
+  const item = currentData[order[idx]];
+  if (bookmarks[key]) {
+    delete bookmarks[key];
+  } else {
+    bookmarks[key] = {
+      q: item.q, a: item.a,
+      section: currentSection,
+      num: order[idx]+1
+    };
+  }
+  updateMarkButton();
+  renderBookmarks();
+}
+
+function updateMarkButton() {
+  if (isPracticeMode) return;
+  const key = getBookmarkKey();
+  const btn = document.getElementById('btnMark');
+  const marked = !!bookmarks[key];
+  btn.textContent = marked ? '★ 已標記' : '☆ 標記練習';
+  btn.classList.toggle('marked', marked);
+}
+
+function renderBookmarks() {
+  // Show only bookmarks for the current sheet
+  const sheetBookmarks = getCurrentSheetBookmarks();
+  const keys = Object.keys(sheetBookmarks);
+  const count = keys.length;
+
+  // Total across all sheets (for the count badge — show "currentSheet / total")
+  const totalCount = Object.keys(bookmarks).length;
+  const countEl = document.getElementById('bookmarkCount');
+  if (count === totalCount) {
+    countEl.textContent = count;
+  } else {
+    countEl.textContent = count + ' (本題庫) / ' + totalCount + ' (全部)';
+  }
+
+  const bmEmpty = document.getElementById('bmEmpty');
+  const bmList = document.getElementById('bmList');
+  const bmPracticeBtn = document.getElementById('bmPracticeBtn');
+  const bmClearBtn = document.getElementById('bmClearBtn');
+
+  if (count === 0) {
+    bmEmpty.style.display = '';
+    bmList.innerHTML = '';
+    bmPracticeBtn.style.display = 'none';
+    bmClearBtn.style.display = 'none';
+    return;
+  }
+
+  bmEmpty.style.display = 'none';
+  bmPracticeBtn.style.display = '';
+  bmClearBtn.style.display = '';
+
+  bmList.innerHTML = '';
+  keys.forEach(key => {
+    const bm = sheetBookmarks[key];
+    const div = document.createElement('div');
+    div.className = 'bm-item';
+    const targetMatch = bm.q.match(/「([^」]+)」/);
+    const displayQHtml = targetMatch
+      ? bm.q.replace('「'+targetMatch[1]+'」', '<span style="color:var(--red);font-weight:700">'+targetMatch[1]+'</span>')
+      : bm.q;
+    div.innerHTML = `
+      <span class="bm-section-tag">${getSectionLabel(bm.section)}</span>
+      <span class="bm-q">${displayQHtml}</span>
+      <span class="bm-a">${bm.a}</span>
+      <button class="bm-remove" onclick="removeBookmark('${key}')" title="移除標記">✕</button>
+    `;
+    bmList.appendChild(div);
+  });
+}
+
+function removeBookmark(key) {
+  delete bookmarks[key];
+  renderBookmarks();
+  updateMarkButton();
+}
+
+function clearAllMarks() {
+  if (!confirm('確定清除全部標記？')) return;
+  bookmarks = {};
+  renderBookmarks();
+  updateMarkButton();
+}
+
+function toggleBookmarksPanel() {
+  const body = document.getElementById('bookmarksBody');
+  const icon = document.getElementById('bmToggleIcon');
+  const open = body.classList.toggle('open');
+  icon.classList.toggle('open', open);
+}
+
+function practiceMarked() {
+  const sheetBookmarks = getCurrentSheetBookmarks();
+  const keys = Object.keys(sheetBookmarks);
+  if (keys.length === 0) return;
+  isPracticeMode = true;
+  practiceOrder = keys.map(k => sheetBookmarks[k]);
+  if (mode === 'rand') {
+    for (let i = practiceOrder.length-1; i > 0; i--) {
+      const j = Math.floor(Math.random()*(i+1));
+      [practiceOrder[i],practiceOrder[j]] = [practiceOrder[j],practiceOrder[i]];
+    }
+  }
+  practiceIdx = 0;
+  showPracticeQuestion();
+}
+
+function showPracticeQuestion() {
+  answered = false;
+  hideAnswer();
+  clearCanvas();
+
+  const item = practiceOrder[practiceIdx];
+  const total = practiceOrder.length;
+  const pct = Math.round((practiceIdx/total)*100);
+  document.getElementById('progressFill').style.width = pct+'%';
+  document.getElementById('progressText').textContent = (practiceIdx+1)+' / '+total+' ★';
+
+  const isHanziToPinyin = isQuestionHanzi(item.q);
+  document.getElementById('questionType').textContent = '★ 加強練習・'+getSectionLabel(item.section);
+  document.getElementById('questionNum').textContent = '原第 '+item.num+' 題';
+
+  const hint = isHanziToPinyin ? getCurrentMeta().hanzi_hint : getCurrentMeta().pinyin_hint;
+  document.getElementById('questionHint').textContent = hint;
+
+  const targetMatch = item.q.match(/「([^」]+)」/);
+  if (targetMatch) {
+    const display = item.q.replace('「'+targetMatch[1]+'」', '<span class="target">'+targetMatch[1]+'</span>');
+    document.getElementById('questionText').innerHTML = display;
+  } else {
+    document.getElementById('questionText').textContent = item.q;
+  }
+
+  // Mark btn in practice mode
+  document.getElementById('btnMark').textContent = '← 返回全部題目';
+  document.getElementById('btnMark').classList.remove('marked');
+  document.getElementById('btnMark').onclick = exitPracticeMode;
+}
+
+function exitPracticeMode() {
+  isPracticeMode = false;
+  document.getElementById('btnMark').onclick = toggleMark;
+  restartQuiz();
+}
+
+// Override nextQuestion to handle practice mode
+const _origNextQuestion = nextQuestion;
+nextQuestion = function() {
+  if (isPracticeMode) {
+    if (practiceIdx < practiceOrder.length - 1) {
+      practiceIdx++;
+      showPracticeQuestion();
+    } else {
+      document.getElementById('questionMain').innerHTML = '<div class="question-text" style="font-size:28px">★ 加強練習完成！</div><div class="question-sub">共 '+practiceOrder.length+' 題</div>';
+      document.getElementById('questionType').textContent = '★ 加強練習';
+      document.getElementById('progressFill').style.width = '100%';
+      document.getElementById('progressText').textContent = practiceOrder.length+' / '+practiceOrder.length+' ★';
+      hideAnswer();
+    }
+    return;
+  }
+  _origNextQuestion();
+};
+
+// ==================== SCORE TRACKING ====================
+let scoreCorrect = 0, scoreWrong = 0, scoreSkip = 0;
+
+function updateScoreDisplay() {
+  document.getElementById('scoreCorrect').textContent = '✓ 答對 ' + scoreCorrect;
+  document.getElementById('scoreWrong').textContent = '✗ 答錯 ' + scoreWrong;
+  document.getElementById('scoreSkip').textContent = '— 未批閱 ' + scoreSkip;
+}
+
+function resetScores() {
+  scoreCorrect = 0; scoreWrong = 0; scoreSkip = 0;
+  updateScoreDisplay();
+}
+
+// ==================== AI GRADING ====================
+function isCanvasBlank() {
+  const pixelData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+  for (let i = 0; i < pixelData.length; i += 4) {
+    if (pixelData[i] < 250 || pixelData[i+1] < 250 || pixelData[i+2] < 250) return false;
+  }
+  return true;
+}
+
+async function gradeHandwriting() {
+  if (isCanvasBlank()) {
+    alert('請先在書寫板上寫下答案！');
+    return;
+  }
+
+  const item = isPracticeMode ? practiceOrder[practiceIdx] : currentData[order[idx]];
+  const correctAnswer = item.a;
+  const question = item.q;
+  const isHanziQ = isQuestionHanzi(question);
+  const _meta = getCurrentMeta();
+  const lang = _meta.language || '中文';
+  const pinyinName = _meta.pinyin_name || '拼音';
+  const answerType = isHanziQ ? (lang + '拼音（' + pinyinName + '）') : (lang + '漢字');
+
+  // Get canvas image
+  const imageData = canvas.toDataURL('image/png').split(',')[1];
+
+  // Show loading
+  const gradingResult = document.getElementById('gradingResult');
+  const gradingLoading = document.getElementById('gradingLoading');
+  const answerHidden = document.getElementById('answerHidden');
+  const answerRevealed = document.getElementById('answerRevealed');
+
+  answerHidden.style.display = 'none';
+  answerRevealed.style.display = 'none';
+  gradingResult.style.display = 'none';
+  gradingLoading.style.display = 'flex';
+
+  document.getElementById('btnGrade').disabled = true;
+
+  try {
+    const extraNote = _meta.ai_prompt_extra || '若答案以「/」分隔表示有多種接受答案，任一寫法皆正確。';
+    const prompt = `你是${lang}字音字形評分老師。
+題目：「${question}」
+要求學生寫出：${answerType}
+正確答案：${correctAnswer}
+
+請辨識圖片中的手寫內容，然後評判是否正確。
+注意：
+- ${extraNote}
+- 漢字題：字形必須正確，異體字若意義相同可接受
+- 若手寫內容難以辨識，請盡力判斷
+
+請只回覆以下JSON格式，不要加任何其他文字：
+{"recognized":"辨識到的手寫內容","verdict":"correct|wrong|unclear","comment":"一句話說明（最多15字）"}`;
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 200,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: 'image/png', data: imageData } },
+            { type: 'text', text: prompt }
+          ]
+        }]
+      })
+    });
+
+    const data = await response.json();
+    const raw = data.content.map(b => b.text || '').join('').trim();
+    const clean = raw.replace(/```json|```/g, '').trim();
+    const result = JSON.parse(clean);
+
+    gradingLoading.style.display = 'none';
+    gradingResult.style.display = 'flex';
+
+    document.getElementById('gradingRecogText').textContent = result.recognized || '（無法辨識）';
+
+    const verdictEl = document.getElementById('gradingVerdict');
+    const iconEl = document.getElementById('verdictIcon');
+    const textEl = document.getElementById('verdictText');
+    const correctRow = document.getElementById('gradingCorrectRow');
+
+    verdictEl.className = 'grading-verdict';
+
+    if (result.verdict === 'correct') {
+      verdictEl.classList.add('correct');
+      iconEl.textContent = '✓';
+      textEl.textContent = '正確！' + (result.comment ? '　' + result.comment : '');
+      correctRow.style.display = 'none';
+      scoreCorrect++;
+      answered = true;
+    } else if (result.verdict === 'wrong') {
+      verdictEl.classList.add('wrong');
+      iconEl.textContent = '✗';
+      textEl.textContent = result.comment || '答案有誤';
+      document.getElementById('gradingCorrectVal').textContent = correctAnswer;
+      correctRow.style.display = 'flex';
+      scoreWrong++;
+      answered = true;
+    } else {
+      verdictEl.classList.add('partial');
+      iconEl.textContent = '？';
+      textEl.textContent = result.comment || '手寫不清楚，請重寫或直接顯示答案';
+      correctRow.style.display = 'none';
+    }
+
+    updateScoreDisplay();
+
+  } catch (err) {
+    gradingLoading.style.display = 'none';
+    answerHidden.style.display = '';
+    answerHidden.textContent = '批閱失敗，請重試或直接顯示答案';
+    console.error(err);
+  }
+
+  document.getElementById('btnGrade').disabled = false;
+}
+
+// Override hideAnswer to also reset grading UI
+const _origHideAnswer = hideAnswer;
+hideAnswer = function() {
+  _origHideAnswer();
+  document.getElementById('gradingResult').style.display = 'none';
+  document.getElementById('gradingLoading').style.display = 'none';
+  const aiOn = document.body.classList.contains('ai-enabled');
+  document.getElementById('answerHidden').textContent = aiOn
+    ? '書寫後按「AI批閱」，或按「顯示答案」直接查看'
+    : '書寫後按「顯示答案」對照';
+};
+
+// Track skipped questions (nextQuestion without grading)
+const _origNextQ2 = nextQuestion;
+nextQuestion = function() {
+  if (!answered && !isPracticeMode) {
+    // Check if canvas has content but wasn't graded
+    if (!isCanvasBlank()) scoreSkip++;
+    updateScoreDisplay();
+  }
+  _origNextQ2();
+};
+
+// ==================== LIBRARY MANAGEMENT ====================
+const LS_LIBRARY_KEY = 'wordTestLibrary_v1';
+const LS_AI_KEY = 'wordTestAIEnabled_v1';
+
+function applyLibraryToUI() {
+  // Global title/subtitle from library.meta
+  const gmeta = currentLibrary.meta || {};
+  document.title = gmeta.title || '字音字形練習帖';
+  document.getElementById('mainTitle').textContent = gmeta.title || '字音字形練習帖';
+  document.getElementById('mainSubtitle').textContent = gmeta.subtitle || '';
+
+  // Seal text from current sheet's meta (or default)
+  const smeta = getCurrentMeta();
+  document.getElementById('sealLeft').textContent = smeta.seal_left || '字音';
+  document.getElementById('sealRight').textContent = smeta.seal_right || '字形';
+
+  // Render sheet selector
+  renderSheetSelector();
+
+  // Reset section state
+  currentSection = 1;
+  currentData = [...getSectionData(1)];
+
+  renderTabs();
+  restartQuiz();
+
+  // Update library description
+  const sheets = currentLibrary.sheets || [];
+  if (sheets.length === 0) {
+    document.getElementById('currentLibraryDesc').textContent = '尚未載入題庫';
+  } else {
+    const totalQ = sheets.reduce((s, sh) =>
+      s + sh.sections.reduce((ss, sec) => ss + sec.data.length, 0), 0);
+    const filename = currentLibrary.filename || '自訂題庫';
+    document.getElementById('currentLibraryDesc').textContent =
+      filename + '（' + sheets.length + ' 個題庫、共 ' + totalQ + ' 題）';
+  }
+}
+
+function renderSheetSelector() {
+  const wrap = document.getElementById('sheetSelectorWrap');
+  if (!wrap) return; // not yet in DOM
+  const sheets = currentLibrary.sheets || [];
+  if (sheets.length === 0) {
+    wrap.style.display = 'none';
+    return;
+  }
+  wrap.style.display = '';
+  const sel = document.getElementById('sheetSelector');
+  // Build options
+  sel.innerHTML = '';
+  sheets.forEach((sh, i) => {
+    const opt = document.createElement('option');
+    opt.value = i;
+    const langTag = sh.sheet_meta && sh.sheet_meta._inferred_lang
+      ? '【' + sh.sheet_meta._inferred_lang + '】 '
+      : '';
+    const qCount = sh.sections.reduce((s, sec) => s + sec.data.length, 0);
+    opt.textContent = langTag + sh.name + '（' + qCount + ' 題）';
+    sel.appendChild(opt);
+  });
+  sel.value = currentSheetIdx;
+}
+
+function switchSheet(idx) {
+  idx = parseInt(idx, 10);
+  if (idx < 0 || idx >= (currentLibrary.sheets || []).length) return;
+  currentSheetIdx = idx;
+  // Update seal text and reset section
+  const smeta = getCurrentMeta();
+  document.getElementById('sealLeft').textContent = smeta.seal_left || '字音';
+  document.getElementById('sealRight').textContent = smeta.seal_right || '字形';
+  currentSection = 1;
+  currentData = [...getSectionData(1)];
+  renderTabs();
+  restartQuiz();
+  renderBookmarks(); // refresh bookmarks display (each sheet has its own)
+}
+
+function saveLibraryToLocalStorage() {
+  try {
+    localStorage.setItem(LS_LIBRARY_KEY, JSON.stringify(currentLibrary));
+  } catch (e) {
+    console.warn('Failed to save library:', e);
+  }
+}
+
+function loadLibraryFromLocalStorage() {
+  try {
+    const raw = localStorage.getItem(LS_LIBRARY_KEY);
+    if (!raw) return null;
+    const lib = JSON.parse(raw);
+    if (!lib) return null;
+
+    // New format (v2): {filename, meta, sheets:[...]}
+    if (lib.sheets && Array.isArray(lib.sheets) && lib.sheets.length > 0) {
+      return lib;
+    }
+
+    // Old format (v1): {meta, sections:[...]} — upgrade to v2
+    if (lib.sections && Array.isArray(lib.sections) && lib.sections.length > 0) {
+      const oldMeta = lib.meta || {};
+      const upgraded = {
+        filename: oldMeta.title || '匯入題庫',
+        meta: {
+          title: oldMeta.title || '字音字形練習帖',
+          subtitle: oldMeta.subtitle || ''
+        },
+        sheets: [{
+          name: oldMeta.title || '題庫',
+          sheet_meta: {
+            seal_left: oldMeta.seal_left || '字音',
+            seal_right: oldMeta.seal_right || '字形',
+            language: oldMeta.language || '中文',
+            pinyin_name: oldMeta.pinyin_name || '拼音',
+            hanzi_hint: oldMeta.hanzi_hint || '請寫出「　」內之拼音',
+            pinyin_hint: oldMeta.pinyin_hint || '請寫出「　」內對應之漢字',
+            ai_prompt_extra: oldMeta.ai_prompt_extra || '若答案以「/」分隔表示有多種接受答案，任一寫法皆正確。',
+            _inferred_lang: inferLanguageFromSheetName(oldMeta.title || '')
+          },
+          sections: lib.sections
+        }]
+      };
+      return upgraded;
+    }
+  } catch (e) {
+    console.warn('Failed to load library:', e);
+  }
+  return null;
+}
+
+function resetToBuiltin() {
+  if (!confirm('確定要清除目前的題庫？將回到「尚未載入題庫」的狀態。')) return;
+  localStorage.removeItem(LS_LIBRARY_KEY);
+  currentLibrary = BUILTIN_LIBRARY;
+  applyLibraryToUI();
+  showToast('已清除題庫');
+}
+
+function clearAllMarksFromSettings() {
+  if (!confirm('確定清除全部標記？')) return;
+  bookmarks = {};
+  renderBookmarks();
+  updateMarkButton();
+  showToast('已清除標記');
+}
+
+// ==================== FILE IMPORT ====================
+async function handleFileImport(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  try {
+    let workbook;
+    const buf = await file.arrayBuffer();
+    workbook = XLSX.read(buf, { type: 'array' });
+
+    const lib = parseWorkbook(workbook, file.name);
+    if (!lib) return; // parseWorkbook handles error toast
+
+    currentLibrary = lib;
+    currentSheetIdx = 0;
+    saveLibraryToLocalStorage();
+    applyLibraryToUI();
+
+    const sheets = lib.sheets || [];
+    const totalQ = sheets.reduce((s, sh) =>
+      s + sh.sections.reduce((ss, sec) => ss + sec.data.length, 0), 0);
+    showToast('✓ 載入成功：' + sheets.length + ' 個題庫、共 ' + totalQ + ' 題');
+    document.getElementById('settingsPanel').classList.remove('open');
+  } catch (err) {
+    console.error(err);
+    showToast('檔案讀取失敗：' + err.message, true);
+  } finally {
+    // Reset input so the same file can be picked again
+    event.target.value = '';
+  }
+}
+
+function parseWorkbook(workbook, filename) {
+  const sheetNames = workbook.SheetNames;
+
+  // Global meta from "設定" / "settings" sheet (optional, only for title/subtitle)
+  const globalMeta = {
+    title: filename.replace(/\.(xlsx|xls|csv)$/i, ''),
+    subtitle: ''
+  };
+
+  let settingsSheetName = null;
+  for (const name of sheetNames) {
+    if (/^設定$|^settings$/i.test(name.trim())) {
+      settingsSheetName = name;
+      const settingsSheet = workbook.Sheets[name];
+      const rows = XLSX.utils.sheet_to_json(settingsSheet, { header: 1, defval: '' });
+      rows.forEach(row => {
+        if (!row || row.length < 2) return;
+        const key = String(row[0] || '').trim();
+        const val = String(row[1] || '').trim();
+        if (key && val && (key === 'title' || key === 'subtitle')) {
+          globalMeta[key] = val;
+        }
+      });
+      break;
+    }
+  }
+
+  // Parse each non-settings sheet as a question bank
+  const sheets = [];
+  for (const sheetName of sheetNames) {
+    if (sheetName === settingsSheetName) continue;
+    const ws = workbook.Sheets[sheetName];
+    const parsed = parseQuestionSheet(ws, sheetName);
+    if (parsed && parsed.sections.length > 0) {
+      sheets.push({
+        name: sheetName,
+        sheet_meta: buildSheetMeta(sheetName),
+        sections: parsed.sections
+      });
+    }
+  }
+
+  if (sheets.length === 0) {
+    showToast('找不到任何有效的題庫工作表', true);
+    return null;
+  }
+
+  return { filename, meta: globalMeta, sheets };
+}
+
+// Parse a single sheet's questions. Returns {sections} or null.
+function parseQuestionSheet(sheet, sheetName) {
+  const data = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+  if (data.length === 0) return null;
+
+  // Detect column names (case-insensitive, accept aliases)
+  const sample = data[0];
+  const keys = Object.keys(sample);
+  function findKey(...candidates) {
+    for (const c of candidates) {
+      const k = keys.find(k => k.toString().toLowerCase().trim() === c.toLowerCase());
+      if (k) return k;
+    }
+    return null;
+  }
+  const kSec = findKey('section', '分類', '類別', '分頁');
+  const kSecName = findKey('section_name', '分類名稱', '類別名稱', '分頁名稱');
+  const kQ = findKey('q', 'question', '題目');
+  const kA = findKey('a', 'answer', '答案');
+
+  if (!kQ || !kA) return null;
+
+  // Group by section
+  const sectionMap = new Map();
+  data.forEach(row => {
+    const q = String(row[kQ] || '').trim();
+    const a = String(row[kA] || '').trim();
+    if (!q || !a) return;
+
+    let secNum = kSec ? parseInt(row[kSec], 10) : 1;
+    if (!secNum || isNaN(secNum)) secNum = 1;
+    const secName = kSecName ? String(row[kSecName] || '').trim() : '';
+
+    if (!sectionMap.has(secNum)) {
+      sectionMap.set(secNum, { name: secName || ('第' + secNum + '類'), data: [] });
+    } else if (secName && sectionMap.get(secNum).name.startsWith('第')) {
+      sectionMap.get(secNum).name = secName;
+    }
+    sectionMap.get(secNum).data.push({ q, a });
+  });
+
+  if (sectionMap.size === 0) return null;
+
+  const sortedKeys = [...sectionMap.keys()].sort((a, b) => a - b);
+  const sections = sortedKeys.map(k => sectionMap.get(k));
+  return { sections };
+}
+
+function downloadTemplate() {
+  const wb = XLSX.utils.book_new();
+
+  // 設定 sheet (只有 title / subtitle 全域用)
+  const settingsData = [
+    ['設定項', '值', '說明'],
+    ['title', '我的字音字形練習帖', '主標題（顯示在頁面頂端）'],
+    ['subtitle', '自編題庫', '副標題'],
+    ['', '', ''],
+    ['說明：', '', ''],
+    ['', '每個工作表 = 一個獨立題庫', ''],
+    ['', '工作表名稱建議含「國語/臺語/客語」，系統會自動套用對應的印章、AI 批改提示', ''],
+    ['', '例如：國小學生-國語-114全國、教師-臺語-113全國、教師-客語-113桃園', '']
+  ];
+  const ws1 = XLSX.utils.aoa_to_sheet(settingsData);
+  ws1['!cols'] = [{ wch: 18 }, { wch: 35 }, { wch: 40 }];
+  XLSX.utils.book_append_sheet(wb, ws1, '設定');
+
+  // 範例 1：國語題庫
+  const guoyu = [
+    ['section', 'section_name', 'q', 'a'],
+    [1, '漢字寫注音', '「鬱」', 'ㄩˋ'],
+    [1, '漢字寫注音', '「曦」', 'ㄒㄧ'],
+    [1, '漢字寫注音', '「饕」餮', 'ㄊㄠ'],
+    [1, '漢字寫注音', '怒髮衝「冠」', 'ㄍㄨㄢ'],
+    [2, '注音寫漢字', '「ㄧㄢˇ」蜓', '蝘'],
+    [2, '注音寫漢字', '「ㄓㄨㄛˊ」磨', '琢'],
+    [2, '注音寫漢字', '懸「ㄧㄚˊ」', '崖']
+  ];
+  const ws2 = XLSX.utils.aoa_to_sheet(guoyu);
+  ws2['!cols'] = [{ wch: 10 }, { wch: 18 }, { wch: 18 }, { wch: 14 }];
+  XLSX.utils.book_append_sheet(wb, ws2, '範例-國語-114全國');
+
+  // 範例 2：臺語題庫
+  const taigi = [
+    ['section', 'section_name', 'q', 'a'],
+    [1, '漢字寫臺羅', '「嗤」', 'tshi̍h/tshih8'],
+    [1, '漢字寫臺羅', '「楞」', 'gông/gong5'],
+    [2, '臺羅寫漢字', '「lê」', '腡'],
+    [2, '臺羅寫漢字', '「tshiu」', '瞅']
+  ];
+  const ws3 = XLSX.utils.aoa_to_sheet(taigi);
+  ws3['!cols'] = [{ wch: 10 }, { wch: 18 }, { wch: 18 }, { wch: 18 }];
+  XLSX.utils.book_append_sheet(wb, ws3, '範例-臺語-113全國');
+
+  // 範例 3：客語題庫
+  const hakka = [
+    ['section', 'section_name', 'q', 'a'],
+    [1, '漢字寫客拼', '「鑿」空', 'cog'],
+    [1, '漢字寫客拼', '「捩」捩轉', 'lidˋ/didˋ'],
+    [2, '客拼寫漢字', '「nemˊ」vongˇ', '淰'],
+    [2, '客拼寫漢字', '「caiˇ」zogˋ', '裁']
+  ];
+  const ws4 = XLSX.utils.aoa_to_sheet(hakka);
+  ws4['!cols'] = [{ wch: 10 }, { wch: 18 }, { wch: 18 }, { wch: 14 }];
+  XLSX.utils.book_append_sheet(wb, ws4, '範例-客語-113桃園');
+
+  XLSX.writeFile(wb, '字音字形題庫範本.xlsx');
+}
+
+// ==================== SETTINGS / AI TOGGLE ====================
+function toggleSettings() {
+  document.getElementById('settingsPanel').classList.toggle('open');
+}
+
+function toggleAI() {
+  const enabled = document.getElementById('aiToggle').checked;
+  document.body.classList.toggle('ai-enabled', enabled);
+  try { localStorage.setItem(LS_AI_KEY, enabled ? '1' : '0'); } catch (e) {}
+  // Refresh answer-hidden text
+  if (!document.getElementById('gradingResult').style.display.includes('flex')) {
+    const ah = document.getElementById('answerHidden');
+    if (ah.style.display !== 'none') {
+      ah.textContent = enabled
+        ? '書寫後按「AI批閱」，或按「顯示答案」直接查看'
+        : '書寫後按「顯示答案」對照';
+    }
+  }
+}
+
+function loadAISetting() {
+  try {
+    const v = localStorage.getItem(LS_AI_KEY);
+    const enabled = v === '1';
+    document.getElementById('aiToggle').checked = enabled;
+    document.body.classList.toggle('ai-enabled', enabled);
+  } catch (e) {}
+}
+
+// ==================== TOAST ====================
+let _toastTimer = null;
+function showToast(msg, isError) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.toggle('error', !!isError);
+  t.classList.add('show');
+  if (_toastTimer) clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+// ==================== INIT ====================
+window.addEventListener('resize', () => { resizeCanvas(); });
+resizeCanvas();
+
+// Load saved library, fall back to built-in
+const savedLib = loadLibraryFromLocalStorage();
+if (savedLib) currentLibrary = savedLib;
+applyLibraryToUI();
+
+loadAISetting();
+updateTimerDisplay();
+renderBookmarks();
+updateScoreDisplay();
+</script>
+</body>
+</html>
