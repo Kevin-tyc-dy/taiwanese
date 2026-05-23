@@ -825,6 +825,91 @@
   }
   .settings-panel.open { display: block; }
 
+  /* Template chooser dialog */
+  .template-dialog-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+  }
+  .template-dialog-overlay.show { display: flex; }
+  .template-dialog {
+    background: var(--rice);
+    border: 2px solid var(--gold);
+    border-radius: 6px;
+    padding: 20px 24px;
+    max-width: 600px;
+    width: 100%;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  }
+  .template-dialog-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--aged);
+  }
+  .template-dialog-header h3 {
+    margin: 0;
+    color: var(--brush);
+    font-size: 18px;
+  }
+  .template-close-btn {
+    background: transparent;
+    border: none;
+    color: var(--brush);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 4px 10px;
+    border-radius: 3px;
+  }
+  .template-close-btn:hover { background: var(--paper); }
+  .template-dialog-desc {
+    font-size: 13px;
+    color: #888;
+    margin: 8px 0 16px;
+  }
+  .template-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+  }
+  @media (max-width: 540px) {
+    .template-grid { grid-template-columns: 1fr 1fr; }
+  }
+  .template-option {
+    background: #fff;
+    border: 1px solid var(--aged);
+    border-radius: 4px;
+    padding: 14px 10px;
+    cursor: pointer;
+    font-family: inherit;
+    text-align: center;
+    transition: all 0.15s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+    color: inherit;
+  }
+  .template-option:hover {
+    border-color: var(--gold);
+    background: var(--paper);
+    transform: translateY(-1px);
+  }
+  .template-option-icon { font-size: 28px; }
+  .template-option-title {
+    font-weight: 600;
+    color: var(--brush);
+    font-size: 14px;
+  }
+
   /* Exam setup panel */
   .exam-setup-panel {
     background: var(--rice);
@@ -1130,7 +1215,7 @@
     </div>
     <div class="top-bar-group">
       <button class="top-btn" onclick="document.getElementById('fileInput').click()">📂 載入題庫</button>
-      <button class="top-btn" id="btnDownloadTemplate" onclick="downloadTemplate()">📄 下載範本</button>
+      <button class="top-btn" id="btnDownloadTemplate" onclick="openTemplateDialog()">📄 下載範本</button>
       <button class="top-btn" id="btnSettings" onclick="toggleSettings()">⚙ 設定</button>
     </div>
     <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFileImport(event)">
@@ -1154,6 +1239,43 @@
         <div class="settings-desc">移除所有「需要加強練習」的題目記錄</div>
       </div>
       <button class="settings-btn danger" onclick="clearAllMarksFromSettings()">清除</button>
+    </div>
+  </div>
+
+  <!-- Template chooser dialog -->
+  <div class="template-dialog-overlay" id="templateDialogOverlay" onclick="closeTemplateDialog(event)">
+    <div class="template-dialog" onclick="event.stopPropagation()">
+      <div class="template-dialog-header">
+        <h3>📄 下載題庫範本</h3>
+        <button class="template-close-btn" onclick="closeTemplateDialog()" title="關閉">✕</button>
+      </div>
+      <div class="template-dialog-desc">選擇要下載的範本：</div>
+      <div class="template-grid">
+        <a class="template-option" href="範本/教師-國語.xlsx" download onclick="closeTemplateDialog()">
+          <div class="template-option-icon">👨‍🏫</div>
+          <div class="template-option-title">教師-國語</div>
+        </a>
+        <a class="template-option" href="範本/教師-臺語.xlsx" download onclick="closeTemplateDialog()">
+          <div class="template-option-icon">👨‍🏫</div>
+          <div class="template-option-title">教師-臺語</div>
+        </a>
+        <a class="template-option" href="範本/教師-客語.xlsx" download onclick="closeTemplateDialog()">
+          <div class="template-option-icon">👨‍🏫</div>
+          <div class="template-option-title">教師-客語</div>
+        </a>
+        <a class="template-option" href="範本/國小學生-國語.xlsx" download onclick="closeTemplateDialog()">
+          <div class="template-option-icon">🧒</div>
+          <div class="template-option-title">國小學生-國語</div>
+        </a>
+        <a class="template-option" href="範本/國小學生-臺語.xlsx" download onclick="closeTemplateDialog()">
+          <div class="template-option-icon">🧒</div>
+          <div class="template-option-title">國小學生-臺語</div>
+        </a>
+        <a class="template-option" href="範本/國小學生-客語.xlsx" download onclick="closeTemplateDialog()">
+          <div class="template-option-icon">🧒</div>
+          <div class="template-option-title">國小學生-客語</div>
+        </a>
+      </div>
     </div>
   </div>
 
@@ -2367,65 +2489,17 @@ function parseQuestionSheet(sheet, sheetName) {
   return { sections };
 }
 
-function downloadTemplate() {
-  const wb = XLSX.utils.book_new();
-
-  // 設定 sheet (只有 title / subtitle 全域用)
-  const settingsData = [
-    ['設定項', '值', '說明'],
-    ['title', '我的字音字形練習帖', '主標題（顯示在頁面頂端）'],
-    ['subtitle', '自編題庫', '副標題'],
-    ['', '', ''],
-    ['說明：', '', ''],
-    ['', '每個工作表 = 一個獨立題庫', ''],
-    ['', '工作表名稱建議含「國語/臺語/客語」，系統會自動套用對應的印章、AI 批改提示', ''],
-    ['', '例如：國小學生-國語-114全國、教師-臺語-113全國、教師-客語-113桃園', '']
-  ];
-  const ws1 = XLSX.utils.aoa_to_sheet(settingsData);
-  ws1['!cols'] = [{ wch: 18 }, { wch: 35 }, { wch: 40 }];
-  XLSX.utils.book_append_sheet(wb, ws1, '設定');
-
-  // 範例 1：國語題庫
-  const guoyu = [
-    ['section', 'section_name', 'q', 'a'],
-    [1, '漢字寫注音', '「鬱」', 'ㄩˋ'],
-    [1, '漢字寫注音', '「曦」', 'ㄒㄧ'],
-    [1, '漢字寫注音', '「饕」餮', 'ㄊㄠ'],
-    [1, '漢字寫注音', '怒髮衝「冠」', 'ㄍㄨㄢ'],
-    [2, '注音寫漢字', '「ㄧㄢˇ」蜓', '蝘'],
-    [2, '注音寫漢字', '「ㄓㄨㄛˊ」磨', '琢'],
-    [2, '注音寫漢字', '懸「ㄧㄚˊ」', '崖']
-  ];
-  const ws2 = XLSX.utils.aoa_to_sheet(guoyu);
-  ws2['!cols'] = [{ wch: 10 }, { wch: 18 }, { wch: 18 }, { wch: 14 }];
-  XLSX.utils.book_append_sheet(wb, ws2, '範例-國語-114全國');
-
-  // 範例 2：臺語題庫
-  const taigi = [
-    ['section', 'section_name', 'q', 'a'],
-    [1, '漢字寫臺羅', '「嗤」', 'tshi̍h/tshih8'],
-    [1, '漢字寫臺羅', '「楞」', 'gông/gong5'],
-    [2, '臺羅寫漢字', '「lê」', '腡'],
-    [2, '臺羅寫漢字', '「tshiu」', '瞅']
-  ];
-  const ws3 = XLSX.utils.aoa_to_sheet(taigi);
-  ws3['!cols'] = [{ wch: 10 }, { wch: 18 }, { wch: 18 }, { wch: 18 }];
-  XLSX.utils.book_append_sheet(wb, ws3, '範例-臺語-113全國');
-
-  // 範例 3：客語題庫
-  const hakka = [
-    ['section', 'section_name', 'q', 'a'],
-    [1, '漢字寫客拼', '「鑿」空', 'cog'],
-    [1, '漢字寫客拼', '「捩」捩轉', 'lidˋ/didˋ'],
-    [2, '客拼寫漢字', '「nemˊ」vongˇ', '淰'],
-    [2, '客拼寫漢字', '「caiˇ」zogˋ', '裁']
-  ];
-  const ws4 = XLSX.utils.aoa_to_sheet(hakka);
-  ws4['!cols'] = [{ wch: 10 }, { wch: 18 }, { wch: 18 }, { wch: 14 }];
-  XLSX.utils.book_append_sheet(wb, ws4, '範例-客語-113桃園');
-
-  XLSX.writeFile(wb, '字音字形題庫範本.xlsx');
+// ==================== TEMPLATE DIALOG ====================
+function openTemplateDialog() {
+  document.getElementById('templateDialogOverlay').classList.add('show');
 }
+
+function closeTemplateDialog(event) {
+  // Only close if clicking the overlay itself (not the dialog content)
+  if (event && event.target.id !== 'templateDialogOverlay' && event.currentTarget !== event.target) return;
+  document.getElementById('templateDialogOverlay').classList.remove('show');
+}
+
 
 // ==================== SETTINGS ====================
 function toggleSettings() {
@@ -2602,15 +2676,40 @@ function startExam() {
 
   let questions;
   if (orderMode === 'rand') {
-    questions = [...pool];
-    for (let i = questions.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [questions[i], questions[j]] = [questions[j], questions[i]];
+    // ===== 隨機模式：字音字形分開抽 =====
+    // 1. Split pool by question type
+    const pinyinPool = pool.filter(item => isQuestionHanzi(item.q));   // 漢字→拼音 (字音)
+    const hanziPool  = pool.filter(item => !isQuestionHanzi(item.q));  // 拼音→漢字 (字形)
+
+    // 2. Decide how many from each (字音 takes the extra if odd)
+    const pinyinWant = Math.ceil(wantCount / 2);   // ex: 100→50, 95→48
+    const hanziWant  = wantCount - pinyinWant;     // ex: 100→50, 95→47
+
+    // 3. Shuffle each pool independently
+    function shuffle(arr) {
+      const out = [...arr];
+      for (let i = out.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [out[i], out[j]] = [out[j], out[i]];
+      }
+      return out;
+    }
+    const pinyinPicked = shuffle(pinyinPool).slice(0, pinyinWant);
+    const hanziPicked  = shuffle(hanziPool).slice(0, hanziWant);
+
+    // 4. 出題順序：先全部字音、再全部字形
+    questions = [...pinyinPicked, ...hanziPicked];
+
+    // Warn if not enough questions in one category
+    if (pinyinPicked.length < pinyinWant || hanziPicked.length < hanziWant) {
+      const actualP = pinyinPicked.length;
+      const actualH = hanziPicked.length;
+      showToast(`題庫不足：實際出 ${actualP} 字音 + ${actualH} 字形 = ${actualP+actualH} 題`, false);
     }
   } else {
-    questions = [...pool];
+    // ===== 依序模式：照題庫原順序（本來就是 section 1 字音先、section 2 字形後）=====
+    questions = pool.slice(0, wantCount);
   }
-  questions = questions.slice(0, wantCount);
 
   // Init exam state
   examMode.active = true;
@@ -2993,7 +3092,7 @@ function drawExamCell(ctx2, x, y, w, h, num, item, answerImg) {
   ctx2.fillStyle = '#2e7d32';
   ctx2.font = 'bold 24px "Noto Serif TC", serif';
   const answerText = item.a.split('/')[0];
-  drawVerticalText(ctx2, answerText, answerX + Math.floor(halfW/2) - 12, bottomY + 18, 28);
+  drawAnswerText(ctx2, answerText, answerX, bottomY + 18, halfW, bottomH - 24);
 
   // Right column: 學生手寫
   ctx2.fillStyle = '#888';
@@ -3030,6 +3129,99 @@ function drawExamCell(ctx2, x, y, w, h, num, item, answerImg) {
   }
 }
 
+// Smart answer drawing: handles vertical (Hanzi/Zhuyin) or horizontal (Latin pinyin),
+// with tone marks placed to the right of the previous character for Zhuyin.
+//
+// boxX, boxY: top-left of the answer area
+// boxW, boxH: width and height of the available area
+function drawAnswerText(ctx2, text, boxX, boxY, boxW, boxH) {
+  if (!text) return;
+
+  // Tone mark characters (for Zhuyin, Hakka, Taigi)
+  const TONE_MARKS = new Set(['ˊ', 'ˇ', 'ˋ', '˙', 'ˆ', '^', '̍', '́', '̀', '̂', '̄']);
+  // Bopomofo Zhuyin range U+3105 - U+312F
+  function isZhuyin(ch) {
+    const c = ch.charCodeAt(0);
+    return c >= 0x3105 && c <= 0x312F;
+  }
+  // Latin / digit (pinyin)
+  function isLatin(ch) {
+    return /[a-zA-Z0-9]/.test(ch);
+  }
+
+  // Decide layout: if more than half of non-tone chars are Latin → horizontal
+  const nonToneChars = [...text].filter(c => !TONE_MARKS.has(c));
+  const latinCount = nonToneChars.filter(isLatin).length;
+  const useHorizontal = latinCount > 0 && latinCount >= nonToneChars.length / 2;
+
+  if (useHorizontal) {
+    // ===== Horizontal mode (pinyin / Latin) =====
+    // Word-wrap if too long
+    const origFont = ctx2.font;
+    // Slightly smaller font for horizontal
+    ctx2.font = ctx2.font.replace(/(\d+)px/, (_, sz) => Math.min(parseInt(sz), 20) + 'px');
+    const measured = ctx2.measureText(text).width;
+    const lineH = 24;
+
+    if (measured <= boxW) {
+      // Fits in one line
+      ctx2.fillText(text, boxX, boxY);
+    } else {
+      // Word wrap by chars
+      let line = '';
+      let curY = boxY;
+      for (const ch of text) {
+        const test = line + ch;
+        if (ctx2.measureText(test).width > boxW && line) {
+          ctx2.fillText(line, boxX, curY);
+          curY += lineH;
+          line = ch;
+          if (curY > boxY + boxH - lineH) break;
+        } else {
+          line = test;
+        }
+      }
+      if (line) ctx2.fillText(line, boxX, curY);
+    }
+    ctx2.font = origFont;
+    return;
+  }
+
+  // ===== Vertical mode (Zhuyin / Hanzi) =====
+  // Tone marks render NEXT TO the previous character, not below.
+  const lineH = 28;        // vertical spacing per row
+  const colCenterX = boxX + Math.floor(boxW / 2);
+  // Save current font for measuring tones
+  const mainFont = ctx2.font;
+
+  let curY = boxY;
+  let lastDrawX = colCenterX - 12;  // where last main char was drawn
+  let lastDrawY = curY;
+
+  for (const ch of text) {
+    if (TONE_MARKS.has(ch)) {
+      // Draw to the right of the last character
+      // Slightly smaller and offset
+      const origFont = ctx2.font;
+      const sz = (mainFont.match(/(\d+)px/) || [null, '24'])[1];
+      ctx2.font = origFont.replace(/(\d+)px/, () => Math.round(sz * 0.85) + 'px');
+      // Position: right of last char, slightly above center
+      const toneX = lastDrawX + parseInt(sz) * 0.65;
+      const toneY = lastDrawY - parseInt(sz) * 0.08;
+      ctx2.fillText(ch, toneX, toneY);
+      ctx2.font = origFont;
+      // Don't advance curY for tone marks
+    } else {
+      // Normal character: draw and advance
+      ctx2.fillText(ch, colCenterX - 12, curY);
+      lastDrawX = colCenterX - 12;
+      lastDrawY = curY;
+      curY += lineH;
+    }
+  }
+}
+
+// Kept for backward compatibility (legacy callers)
 function drawVerticalText(ctx2, text, x, y, lineHeight) {
   let curY = y;
   for (const ch of text) {
