@@ -455,6 +455,45 @@
     opacity: 0.8;
   }
 
+  /* === Question + Whiteboard side-by-side layout === */
+  .qa-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr;  /* 題目 2/3, 作答 1/3 */
+    gap: 16px;
+    margin-bottom: 16px;
+    align-items: stretch;
+  }
+  .qa-row > .card.qa-question {
+    margin-bottom: 0;  /* card 原本有 margin-bottom, 在 row 內取消 */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .qa-row > .whiteboard-wrap.qa-canvas {
+    margin-bottom: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .qa-row > .whiteboard-wrap.qa-canvas canvas#wb {
+    flex: 1;
+    height: auto;
+    min-height: 280px;  /* enough room to write one character */
+  }
+  /* On narrow screens (small phones), stack vertically again */
+  @media (max-width: 540px) {
+    .qa-row {
+      grid-template-columns: 1fr;
+    }
+    .qa-row > .whiteboard-wrap.qa-canvas canvas#wb {
+      min-height: 200px;
+    }
+  }
+
+  /* When in qa-row layout, question text size can be larger since column is narrower */
+  .qa-row .question-text {
+    font-size: clamp(40px, 6vw, 72px);
+  }
+
   .question-num {
     position: absolute;
     top: 12px;
@@ -1445,15 +1484,42 @@
     <div class="progress-text" id="progressText">0 / 100</div>
   </div>
 
-  <!-- Question Card -->
-  <div class="card">
-    <div class="question-type" id="questionType">漢字→拼音</div>
-    <div class="question-num" id="questionNum">第 1 題</div>
-    <div class="question-main" id="questionMain">
-      <div class="question-hint" id="questionHint">請寫出「」內之拼音</div>
-      <div class="question-text" id="questionText">—</div>
+  <!-- Question + Whiteboard row (left 2/3 题目, right 1/3 作答) -->
+  <div class="qa-row">
+    <!-- Question Card -->
+    <div class="card qa-question">
+      <div class="question-type" id="questionType">漢字→拼音</div>
+      <div class="question-num" id="questionNum">第 1 題</div>
+      <div class="question-main" id="questionMain">
+        <div class="question-hint" id="questionHint">請寫出「」內之拼音</div>
+        <div class="question-text" id="questionText">—</div>
+      </div>
+      <button class="btn-mark" id="btnMark" onclick="toggleMark()">☆ 標記練習</button>
     </div>
-    <button class="btn-mark" id="btnMark" onclick="toggleMark()">☆ 標記練習</button>
+
+    <!-- Whiteboard -->
+    <div class="whiteboard-wrap qa-canvas">
+      <div class="wb-toolbar">
+        <span class="wb-label">✏ 書寫板</span>
+        <!-- Pen sizes -->
+        <div class="wb-tool active" id="sizeS" onclick="setSize(2)" title="細筆">
+          <div class="size-dot" style="width:4px;height:4px"></div>
+        </div>
+        <div class="wb-tool" id="sizeM" onclick="setSize(5)" title="中筆">
+          <div class="size-dot" style="width:8px;height:8px"></div>
+        </div>
+        <div class="wb-tool" id="sizeL" onclick="setSize(10)" title="粗筆">
+          <div class="size-dot" style="width:14px;height:14px"></div>
+        </div>
+        <!-- Colors -->
+        <div class="color-swatch active" id="colorBlack" style="background:#1a1208" onclick="setColor('#1a1208')" title="墨黑"></div>
+        <div class="color-swatch" id="colorRed" style="background:#c0392b" onclick="setColor('#c0392b')" title="硃紅"></div>
+        <div class="color-swatch" id="colorBlue" style="background:#1a4a8a" onclick="setColor('#1a4a8a')" title="靛藍"></div>
+        <!-- Eraser -->
+        <div class="wb-tool" id="eraserBtn" onclick="toggleEraser()" title="橡皮擦">⌫</div>
+      </div>
+      <canvas id="wb"></canvas>
+    </div>
   </div>
 
   <!-- Answer -->
@@ -1463,30 +1529,6 @@
       <div class="answer-label">正確答案</div>
       <div class="answer-value" id="answerValue">—</div>
     </div>
-  </div>
-
-  <!-- Whiteboard -->
-  <div class="whiteboard-wrap">
-    <div class="wb-toolbar">
-      <span class="wb-label">✏ 書寫板（支援 Apple Pencil）</span>
-      <!-- Pen sizes -->
-      <div class="wb-tool active" id="sizeS" onclick="setSize(2)" title="細筆">
-        <div class="size-dot" style="width:4px;height:4px"></div>
-      </div>
-      <div class="wb-tool" id="sizeM" onclick="setSize(5)" title="中筆">
-        <div class="size-dot" style="width:8px;height:8px"></div>
-      </div>
-      <div class="wb-tool" id="sizeL" onclick="setSize(10)" title="粗筆">
-        <div class="size-dot" style="width:14px;height:14px"></div>
-      </div>
-      <!-- Colors -->
-      <div class="color-swatch active" id="colorBlack" style="background:#1a1208" onclick="setColor('#1a1208')" title="墨黑"></div>
-      <div class="color-swatch" id="colorRed" style="background:#c0392b" onclick="setColor('#c0392b')" title="硃紅"></div>
-      <div class="color-swatch" id="colorBlue" style="background:#1a4a8a" onclick="setColor('#1a4a8a')" title="靛藍"></div>
-      <!-- Eraser -->
-      <div class="wb-tool" id="eraserBtn" onclick="toggleEraser()" title="橡皮擦">⌫</div>
-    </div>
-    <canvas id="wb"></canvas>
   </div>
 
   <!-- Actions -->
