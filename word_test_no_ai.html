@@ -1087,6 +1087,44 @@
     font-size: 14px;
   }
 
+  /* Big prominent "Export" button — only shown after exam submit */
+  .btn-export-big {
+    display: none;
+    width: 100%;
+    margin-bottom: 16px;
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #f4a82c 0%, #e89510 100%);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Noto Serif TC', serif;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(232, 149, 16, 0.35), 0 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.2s;
+    text-align: center;
+    line-height: 1.4;
+  }
+  .btn-export-big:hover {
+    background: linear-gradient(135deg, #f7b340 0%, #f0a020 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(232, 149, 16, 0.45), 0 3px 6px rgba(0,0,0,0.15);
+  }
+  .btn-export-big:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(232, 149, 16, 0.4);
+  }
+  .btn-export-big.show {
+    display: block;
+    animation: pulse-attention 1.5s ease-in-out 2;
+  }
+  @keyframes pulse-attention {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+  }
+
   /* In exam mode, hide some controls */
   body.exam-mode #btnReveal,
   body.exam-mode #btnSettings,
@@ -1346,11 +1384,15 @@
       <span class="exam-mode-tag" style="background:var(--green)">✓ 考試結束</span>
       <span id="examResultText">共 0 題</span>
     </div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap">
+    <div>
       <button class="top-btn" onclick="exitExamMode()">← 回練習模式</button>
-      <button class="top-btn primary" onclick="exportExamImage()">🖼 匯出作答圖</button>
     </div>
   </div>
+
+  <!-- Big prominent "Export" button (only visible after exam submit) -->
+  <button class="btn-export-big" id="btnExportBig" onclick="exportExamImage()">
+    🖼 匯出作答圖（給老師批改）
+  </button>
 
   <header>
     <div class="header-top">
@@ -2722,9 +2764,11 @@ function startExam() {
 
   // Switch UI to exam mode
   document.body.classList.add('exam-mode');
+  document.body.classList.remove('exam-reviewed');
   document.getElementById('examSetupPanel').classList.remove('open');
   document.getElementById('examStatusBar').classList.add('show');
   document.getElementById('examResultPanel').classList.remove('show');
+  document.getElementById('btnExportBig').classList.remove('show');
 
   // Use exam questions as current data
   currentData = questions;
@@ -2783,6 +2827,7 @@ function doSubmitExam() {
   // Switch to "reviewed" state
   document.getElementById('examStatusBar').classList.remove('show');
   document.getElementById('examResultPanel').classList.add('show');
+  document.getElementById('btnExportBig').classList.add('show');
   document.getElementById('examResultText').textContent =
     '共 ' + examMode.questions.length + ' 題（已作答 ' + examMode.answers.size + ' 題）';
   document.body.classList.add('exam-reviewed');
@@ -2808,6 +2853,7 @@ function exitExamMode() {
   document.body.classList.remove('exam-mode', 'exam-reviewed');
   document.getElementById('examStatusBar').classList.remove('show');
   document.getElementById('examResultPanel').classList.remove('show');
+  document.getElementById('btnExportBig').classList.remove('show');
 
   // Restore practice mode data
   currentSection = 1;
