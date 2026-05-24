@@ -2961,20 +2961,97 @@ async function exportExamImage() {
     showToast('需先交卷才能匯出', true);
     return;
   }
-  showToast('產生匯出圖片中，請稍候...');
 
   const questions = examMode.questions;
-  const n = questions.length;
+  const totalQ = questions.length;
 
-  // Layout: 10 columns × ceil(n/10) rows
+  // Find the last question that has an answer (highest answered index + 1)
+  let lastAnswered = -1;
+  for (let i = totalQ - 1; i >= 0; i--) {
+    if (examMode.answers.has(i)) {
+      lastAnswered = i;
+      break;
+    }
+  }
+
+  if (lastAnswered < 0) {
+    showToast('沒有任何作答，無法匯出', true);
+    return;
+  }
+
+  // Determine actual range to export: 1 ~ lastAnswered+1 (1-indexed)
+  // Split into batches of 50, fixed-aligned (1-50, 51-100, etc.)
+  const PER_BATCH = 50;
+  const totalToExport = lastAnswered + 1;
+  const numBatches = Math.ceil(totalToExport / PER_BATCH);
+
+  showToast(`產生 ${numBatches} 張圖片（共 ${totalToExport} 題範圍）...`);
+
+  // Pre-load all answer images that exist
+  const answerImages = new Map();
+  for (let i = 0; i <= lastAnswered; i++) {
+    const dataURL = examMode.answers.get(i);
+    if (!dataURL) continue;
+    try {
+      const img = await loadImage(dataURL);
+      answerImages.set(i, img);
+    } catch (e) {
+      console.warn('Failed to load answer image', i, e);
+    }
+  }
+
+  // Common timestamp for filename consistency
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const meta = currentLibrary.meta || {};
+  const titleBase = meta.title || '字音字形模擬考';
+  const elapsed = Math.floor((Date.now() - examMode.startTime) / 1000);
+
+  // Generate each batch sequentially with small delay between downloads
+  for (let batchIdx = 0; batchIdx < numBatches; batchIdx++) {
+    const startQ = batchIdx * PER_BATCH;       // 0-indexed first question of this batch
+    const endQ = Math.min(startQ + PER_BATCH, totalToExport);  // exclusive
+    // Display label: question numbers in this batch
+    const firstNum = startQ + 1;
+    const lastNum = (batchIdx === numBatches - 1) ? totalToExport : startQ + PER_BATCH;
+
+    await renderAndDownloadBatch({
+      startQ,
+      // For layout consistency, always reserve PER_BATCH slots even if last batch is partial
+      slotCount: PER_BATCH,
+      questions,
+      answerImages,
+      batchIdx,
+      numBatches,
+      titleBase,
+      elapsed,
+      totalQ,
+      dateStr,
+      firstNum,
+      lastNum
+    });
+
+    // Small delay to let browser handle each download (avoid being blocked)
+    if (batchIdx < numBatches - 1) {
+      await new Promise(r => setTimeout(r, 400));
+    }
+  }
+
+  showToast(`✓ 已匯出 ${numBatches} 張作答圖片`);
+}
+
+async function renderAndDownloadBatch(opts) {
+  const {
+    startQ, slotCount, questions, answerImages,
+    batchIdx, numBatches, titleBase, elapsed, totalQ, dateStr, firstNum, lastNum
+  } = opts;
+
+  // Layout: 10 cols × 5 rows = 50 cells per image
   const COLS = 10;
-  const ROWS = Math.ceil(n / COLS);
-  // Cell size — taller now to accommodate larger answer/handwriting boxes
-  const CELL_W = 230;
-  const CELL_H = 220;
-  // Padding
+  const ROWS = Math.ceil(slotCount / COLS);  // = 5 for 50 slots
+  const CELL_W = 260;
+  const CELL_H = 320;
   const PAD = 16;
-  const HEADER_H = 70;
+  const HEADER_H = 80;
 
   const totalW = COLS * CELL_W + PAD * 2;
   const totalH = HEADER_H + ROWS * CELL_H + PAD * 2;
@@ -2988,47 +3065,55 @@ async function exportExamImage() {
   bctx.fillStyle = '#ffffff';
   bctx.fillRect(0, 0, totalW, totalH);
 
-  // Header
+  // Header (different text per batch)
   bctx.fillStyle = '#1a1208';
-  bctx.font = 'bold 24px "Noto Serif TC", serif';
+  bctx.font = 'bold 32px "Noto Serif TC", serif';
   bctx.textBaseline = 'middle';
-  const meta = (currentLibrary.meta || {});
-  const elapsed = Math.floor((Date.now() - examMode.startTime) / 1000);
-  const titleStr = (meta.title || '字音字形模擬考')
-    + '  ・  ' + n + ' 題'
-    + '  ・  耗時 ' + Math.floor(elapsed/60) + ' 分 ' + (elapsed%60) + ' 秒';
+  let titleStr = titleBase + '  ・  第 ' + firstNum + '–' + lastNum + ' 題';
+  if (numBatches > 1) {
+    titleStr += '  ・  (第 ' + (batchIdx + 1) + ' / ' + numBatches + ' 張)';
+  }
+  titleStr += '  ・  耗時 ' + Math.floor(elapsed / 60) + ' 分 ' + (elapsed % 60) + ' 秒';
   bctx.fillText(titleStr, PAD, HEADER_H / 2);
 
-  // Pre-load all answer images
-  const answerImages = new Map();
-  for (let i = 0; i < n; i++) {
-    const dataURL = examMode.answers.get(i);
-    if (!dataURL) continue;
-    const img = await loadImage(dataURL);
-    answerImages.set(i, img);
-  }
-
-  // Draw each cell
-  for (let i = 0; i < n; i++) {
-    const col = i % COLS;
-    const row = Math.floor(i / COLS);
+  // Draw 50 cells (some may be beyond the question count → show as blank/unanswered)
+  for (let slot = 0; slot < slotCount; slot++) {
+    const qIdx = startQ + slot;  // 0-indexed question in examQuestions
+    const col = slot % COLS;
+    const row = Math.floor(slot / COLS);
     const x = PAD + col * CELL_W;
     const y = HEADER_H + PAD + row * CELL_H;
-    drawExamCell(bctx, x, y, CELL_W, CELL_H, i + 1, questions[i], answerImages.get(i));
+
+    if (qIdx >= totalQ) {
+      // Beyond question count: empty placeholder
+      drawEmptyCell(bctx, x, y, CELL_W, CELL_H);
+    } else {
+      drawExamCell(bctx, x, y, CELL_W, CELL_H, qIdx + 1, questions[qIdx], answerImages.get(qIdx));
+    }
   }
 
-  // Convert and download
-  bigCanvas.toBlob(blob => {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = '模擬考作答_' + n + '題_' + new Date().toISOString().slice(0,10) + '.png';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 5000);
-    showToast('✓ 已匯出作答圖片');
-  }, 'image/png');
+  // Convert and trigger download
+  await new Promise((resolve) => {
+    bigCanvas.toBlob(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      // Filename: 模擬考作答_第1-50題_2025-XX-XX.png
+      a.download = '模擬考作答_第' + firstNum + '-' + lastNum + '題_' + dateStr + '.png';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+      resolve();
+    }, 'image/png');
+  });
+}
+
+// Draw an empty placeholder cell (used when a batch extends beyond the actual question count)
+function drawEmptyCell(ctx2, x, y, w, h) {
+  ctx2.strokeStyle = '#f0e8d8';
+  ctx2.lineWidth = 1;
+  ctx2.strokeRect(x, y, w, h);
 }
 
 function loadImage(src) {
@@ -3048,27 +3133,29 @@ function drawExamCell(ctx2, x, y, w, h, num, item, answerImg) {
 
   // Layout inside cell:
   // [Header: 題號 + 題目] (top)
-  // [Bottom: 正確答案 (left, vertical) | 學生手寫 (right)]
-  const padIn = 6;
-  const headerH = 36;
+  // [Bottom: 正確答案 (left, vertical centered) | 學生手寫 (right)]
+  const padIn = 8;
+  const headerH = 52;  // taller header for larger title text
 
   // Header: 題號
   ctx2.fillStyle = '#888';
-  ctx2.font = 'bold 12px "Noto Sans TC", sans-serif';
+  ctx2.font = 'bold 18px "Noto Sans TC", sans-serif';
   ctx2.textBaseline = 'top';
+  ctx2.textAlign = 'left';
   ctx2.fillText('第 ' + num + ' 題', x + padIn, y + padIn);
 
   // Question text (right of 題號)
   ctx2.fillStyle = '#1a1208';
-  ctx2.font = 'bold 15px "Noto Serif TC", serif';
+  ctx2.font = 'bold 22px "Noto Serif TC", serif';
   const qText = item.q.replace(/「/g, '【').replace(/」/g, '】');
   let displayQ = qText;
-  const maxQWidth = w - padIn * 2 - 50;
+  const titleOffset = 78;  // wider gap for larger 題號
+  const maxQWidth = w - padIn * 2 - titleOffset;
   while (ctx2.measureText(displayQ).width > maxQWidth && displayQ.length > 2) {
     displayQ = displayQ.slice(0, -1);
   }
   if (displayQ !== qText) displayQ = displayQ.slice(0, -1) + '…';
-  ctx2.fillText(displayQ, x + padIn + 50, y + padIn + 2);
+  ctx2.fillText(displayQ, x + padIn + titleOffset, y + padIn + 2);
 
   // Divider
   ctx2.strokeStyle = '#e8dcc8';
@@ -3077,33 +3164,41 @@ function drawExamCell(ctx2, x, y, w, h, num, item, answerImg) {
   ctx2.lineTo(x + w, y + headerH);
   ctx2.stroke();
 
-  // Below header: left = 正確答案 (直書), right = 學生手寫
+  // Below header: left = 正確答案, right = 學生手寫
   const bottomH = h - headerH;
-  const bottomY = y + headerH + padIn;
+  const bottomY = y + headerH;
+  const labelH = 24;            // label "正確" / "作答" row height
+  const contentY = bottomY + labelH + 4;
+  const contentH = bottomH - labelH - 12;
   const halfW = (w - padIn * 3) / 2;
   const answerX = x + padIn;
   const imageX = answerX + halfW + padIn;
 
-  // Left column: 正確答案
+  // Left column label: 正確
   ctx2.fillStyle = '#888';
-  ctx2.font = '11px "Noto Sans TC"';
-  ctx2.fillText('正確', answerX, bottomY);
+  ctx2.font = '14px "Noto Sans TC"';
+  ctx2.textAlign = 'center';
+  ctx2.fillText('正確', answerX + halfW / 2, bottomY + 6);
+  ctx2.textAlign = 'left';
 
+  // 正確答案 — drawn centered, larger font (2.5× original)
   ctx2.fillStyle = '#2e7d32';
-  ctx2.font = 'bold 24px "Noto Serif TC", serif';
+  ctx2.font = 'bold 60px "Noto Serif TC", serif';
   const answerText = item.a.split('/')[0];
-  drawAnswerText(ctx2, answerText, answerX, bottomY + 18, halfW, bottomH - 24);
+  drawAnswerText(ctx2, answerText, answerX, contentY, halfW, contentH);
 
-  // Right column: 學生手寫
+  // Right column label: 作答
   ctx2.fillStyle = '#888';
-  ctx2.font = '11px "Noto Sans TC"';
-  ctx2.fillText('作答', imageX, bottomY);
+  ctx2.font = '14px "Noto Sans TC"';
+  ctx2.textAlign = 'center';
+  ctx2.fillText('作答', imageX + halfW / 2, bottomY + 6);
+  ctx2.textAlign = 'left';
 
-  // Image area
+  // Image area (right half, centered)
   const imgBoxX = imageX;
-  const imgBoxY = bottomY + 16;
+  const imgBoxY = contentY;
   const imgBoxW = halfW;
-  const imgBoxH = bottomH - 16 - padIn;
+  const imgBoxH = contentH;
 
   // Box outline
   ctx2.strokeStyle = '#e0e0e0';
@@ -3111,7 +3206,7 @@ function drawExamCell(ctx2, x, y, w, h, num, item, answerImg) {
   ctx2.strokeRect(imgBoxX, imgBoxY, imgBoxW, imgBoxH);
 
   if (answerImg) {
-    // Preserve aspect ratio: letterbox into box
+    // Letterbox: preserve aspect ratio, centered in the box
     const scale = Math.min(imgBoxW / answerImg.width, imgBoxH / answerImg.height);
     const dW = answerImg.width * scale;
     const dH = answerImg.height * scale;
@@ -3120,10 +3215,10 @@ function drawExamCell(ctx2, x, y, w, h, num, item, answerImg) {
     ctx2.drawImage(answerImg, dX, dY, dW, dH);
   } else {
     ctx2.fillStyle = '#ccc';
-    ctx2.font = 'italic 12px sans-serif';
+    ctx2.font = 'italic 16px sans-serif';
     ctx2.textBaseline = 'middle';
     ctx2.textAlign = 'center';
-    ctx2.fillText('(未作答)', imgBoxX + imgBoxW/2, imgBoxY + imgBoxH/2);
+    ctx2.fillText('(未作答)', imgBoxX + imgBoxW / 2, imgBoxY + imgBoxH / 2);
     ctx2.textAlign = 'left';
     ctx2.textBaseline = 'top';
   }
@@ -3139,12 +3234,10 @@ function drawAnswerText(ctx2, text, boxX, boxY, boxW, boxH) {
 
   // Tone mark characters (for Zhuyin, Hakka, Taigi)
   const TONE_MARKS = new Set(['ˊ', 'ˇ', 'ˋ', '˙', 'ˆ', '^', '̍', '́', '̀', '̂', '̄']);
-  // Bopomofo Zhuyin range U+3105 - U+312F
   function isZhuyin(ch) {
     const c = ch.charCodeAt(0);
     return c >= 0x3105 && c <= 0x312F;
   }
-  // Latin / digit (pinyin)
   function isLatin(ch) {
     return /[a-zA-Z0-9]/.test(ch);
   }
@@ -3154,71 +3247,103 @@ function drawAnswerText(ctx2, text, boxX, boxY, boxW, boxH) {
   const latinCount = nonToneChars.filter(isLatin).length;
   const useHorizontal = latinCount > 0 && latinCount >= nonToneChars.length / 2;
 
-  if (useHorizontal) {
-    // ===== Horizontal mode (pinyin / Latin) =====
-    // Word-wrap if too long
-    const origFont = ctx2.font;
-    // Slightly smaller font for horizontal
-    ctx2.font = ctx2.font.replace(/(\d+)px/, (_, sz) => Math.min(parseInt(sz), 20) + 'px');
-    const measured = ctx2.measureText(text).width;
-    const lineH = 24;
+  // Save font/state
+  const origFont = ctx2.font;
+  const fontSize = parseInt((origFont.match(/(\d+)px/) || [null, '60'])[1]);
 
+  if (useHorizontal) {
+    // ===== Horizontal mode (羅馬拼音) =====
+    // Use moderately smaller font for horizontal so longer pinyin fits
+    const hFont = origFont.replace(/(\d+)px/, () => Math.round(fontSize * 0.7) + 'px');
+    ctx2.font = hFont;
+    const hFontSize = Math.round(fontSize * 0.7);
+    const lineH = Math.round(hFontSize * 1.2);
+
+    // Try to fit on one line; if too long, word-wrap
+    const measured = ctx2.measureText(text).width;
+    const lines = [];
     if (measured <= boxW) {
-      // Fits in one line
-      ctx2.fillText(text, boxX, boxY);
+      lines.push(text);
     } else {
-      // Word wrap by chars
       let line = '';
-      let curY = boxY;
       for (const ch of text) {
         const test = line + ch;
         if (ctx2.measureText(test).width > boxW && line) {
-          ctx2.fillText(line, boxX, curY);
-          curY += lineH;
+          lines.push(line);
           line = ch;
-          if (curY > boxY + boxH - lineH) break;
         } else {
           line = test;
         }
       }
-      if (line) ctx2.fillText(line, boxX, curY);
+      if (line) lines.push(line);
     }
+
+    // Vertical center
+    const totalH = lines.length * lineH;
+    let startY = boxY + (boxH - totalH) / 2;
+    if (startY < boxY) startY = boxY;
+
+    ctx2.textBaseline = 'top';
+    ctx2.textAlign = 'center';
+    const centerX = boxX + boxW / 2;
+    for (let i = 0; i < lines.length; i++) {
+      ctx2.fillText(lines[i], centerX, startY + i * lineH);
+    }
+    ctx2.textAlign = 'left';
     ctx2.font = origFont;
     return;
   }
 
   // ===== Vertical mode (Zhuyin / Hanzi) =====
-  // Tone marks render NEXT TO the previous character, not below.
-  const lineH = 28;        // vertical spacing per row
-  const colCenterX = boxX + Math.floor(boxW / 2);
-  // Save current font for measuring tones
-  const mainFont = ctx2.font;
-
-  let curY = boxY;
-  let lastDrawX = colCenterX - 12;  // where last main char was drawn
-  let lastDrawY = curY;
-
-  for (const ch of text) {
+  // Count "main characters" (non-tone) to compute total height
+  const mainChars = [];   // each = {ch, isTone:false, idx in original}
+  const chars = [...text];
+  // Build list: each main char followed by its trailing tone marks (if any)
+  const groups = [];      // groups[i] = { main: 'ㄐ', tone: 'ˇ' or '' }
+  for (let i = 0; i < chars.length; i++) {
+    const ch = chars[i];
     if (TONE_MARKS.has(ch)) {
-      // Draw to the right of the last character
-      // Slightly smaller and offset
-      const origFont = ctx2.font;
-      const sz = (mainFont.match(/(\d+)px/) || [null, '24'])[1];
-      ctx2.font = origFont.replace(/(\d+)px/, () => Math.round(sz * 0.85) + 'px');
-      // Position: right of last char, slightly above center
-      const toneX = lastDrawX + parseInt(sz) * 0.65;
-      const toneY = lastDrawY - parseInt(sz) * 0.08;
-      ctx2.fillText(ch, toneX, toneY);
-      ctx2.font = origFont;
-      // Don't advance curY for tone marks
+      // Attach to last group if exists
+      if (groups.length > 0) {
+        groups[groups.length - 1].tone = ch;
+      }
     } else {
-      // Normal character: draw and advance
-      ctx2.fillText(ch, colCenterX - 12, curY);
-      lastDrawX = colCenterX - 12;
-      lastDrawY = curY;
-      curY += lineH;
+      groups.push({ main: ch, tone: '' });
     }
   }
+
+  // Line height = font size × 1.05 (tight, since Zhuyin chars stack)
+  const lineH = Math.round(fontSize * 1.05);
+  const totalH = groups.length * lineH;
+
+  // Vertical center within boxY..boxY+boxH
+  let startY = boxY + (boxH - totalH) / 2;
+  if (startY < boxY) startY = boxY;
+
+  const centerX = boxX + boxW / 2;
+  const toneFontSize = Math.round(fontSize * 0.7);
+  const toneFont = origFont.replace(/(\d+)px/, () => toneFontSize + 'px');
+
+  ctx2.textBaseline = 'top';
+  ctx2.textAlign = 'center';
+  for (let i = 0; i < groups.length; i++) {
+    const g = groups[i];
+    const charY = startY + i * lineH;
+    // Draw main character centered horizontally
+    ctx2.fillText(g.main, centerX, charY);
+    // Draw tone mark next to it (right side, slightly higher)
+    if (g.tone) {
+      ctx2.font = toneFont;
+      const toneX = centerX + fontSize * 0.5;
+      const toneY = charY - fontSize * 0.05;
+      ctx2.textAlign = 'left';
+      ctx2.fillText(g.tone, toneX, toneY);
+      ctx2.textAlign = 'center';
+      ctx2.font = origFont;
+    }
+  }
+  ctx2.textAlign = 'left';
+  ctx2.font = origFont;
 }
 
 // Kept for backward compatibility (legacy callers)
