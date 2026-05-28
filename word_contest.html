@@ -175,6 +175,13 @@ canvas#wb { display: block; width: 100%; height: 240px; background: #fff; border
 .btn-export-big { background: var(--green); color: white; border: none; padding: 16px 32px; border-radius: 8px; font-family: 'Ma Shan Zheng', serif; font-size: 22px; letter-spacing: 4px; cursor: pointer; box-shadow: 0 4px 0 #1b5e20; margin: 8px 4px; }
 .btn-export-big:hover { background: #246626; }
 .btn-export-big:active { transform: translateY(2px); box-shadow: 0 2px 0 #1b5e20; }
+.exam-image-card { background: #fff; border: 1px solid #d0c8b0; border-radius: 8px; padding: 12px; margin: 12px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.exam-image-toolbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
+.exam-image-label { font-size: 18px; font-weight: 600; color: var(--brush); }
+.btn-export-batch { background: var(--green); color: white; border: none; padding: 10px 18px; border-radius: 6px; font-size: 15px; cursor: pointer; box-shadow: 0 2px 0 #1b5e20; }
+.btn-export-batch:hover { background: #246626; }
+.btn-export-batch:active { transform: translateY(1px); box-shadow: 0 1px 0 #1b5e20; }
+.exam-image-png { display: block; width: 100%; height: auto; border: 1px solid #e5dcc1; border-radius: 4px; }
 
 /* ===== Toast / dialog ===== */
 .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--brush); color: white; padding: 12px 24px; border-radius: 6px; z-index: 9999; opacity: 0; transition: opacity 0.3s; pointer-events: none; font-size: 14px; max-width: 90vw; text-align: center; }
@@ -375,9 +382,10 @@ canvas#wb { display: block; width: 100%; height: 240px; background: #fff; border
   <div class="result-card">
     <div class="result-title">作答完成</div>
     <div class="result-stats" id="resultStats">—</div>
-    <button class="btn-export-big" onclick="exportExamImage()">🖼 匯出作答圖（給老師批改）</button>
+    <button class="btn-export-big" onclick="exportExamImage()">🖼 顯示作答圖（給老師批改）</button>
     <button class="btn-export-big" style="background:var(--gold);box-shadow:0 4px 0 #6e5208" onclick="showAllAnswers()">📖 對照答案</button>
   </div>
+  <div id="examImagesWrap" class="hidden"></div>
   <div id="answerListWrap" class="hidden"></div>
   <div class="start-row"><button class="top-btn primary" onclick="returnToMode()">↩ 回主畫面</button></div>
 </div>
@@ -1013,40 +1021,45 @@ async function exportExamImage() {
     answered.push({ num: i + 1, item: state.questions[i], img });
   }
   if (answered.length === 0) { showToast('沒有作答，無法匯出', true); return; }
+  const PER_BATCH = 50;
+  const numBatches = Math.ceil(answered.length / PER_BATCH);
   const dateStr = new Date().toISOString().slice(0, 10);
   const titleBase = '模擬考_' + (state.mockBank === 'xiaoxue' ? '國小' : '教師') + '_' + (state.mockPaper === 'random' ? '隨機200題' : (mockPapers()[state.mockPaper] ? mockPapers()[state.mockPaper].name : ''));
-  const elapsed = state.examStart ? Math.floor((Date.now() - state.examStart)/1000) : 0;
-  showToast('產生作答圖（共 ' + answered.length + ' 題）...');
-  // Single tall PNG — per-cell resolution unchanged, just stacks all rows; extra top whitespace for iPad viewing
-  const COLS = 10;
-  const ROWS = Math.ceil(answered.length / COLS);
-  const CELL_W = 260, CELL_H = 320, PAD = 16, HEADER_H = 80;
-  const EXTRA_TOP = CELL_H; // 多一行的高度，方便在 iPad 上瀏覽
-  const totalW = COLS * CELL_W + PAD * 2;
-  const totalH = EXTRA_TOP + HEADER_H + ROWS * CELL_H + PAD * 2;
-  const big = document.createElement('canvas');
-  big.width = totalW; big.height = totalH;
-  const bctx = big.getContext('2d');
-  bctx.fillStyle = '#fff'; bctx.fillRect(0, 0, totalW, totalH);
-  bctx.fillStyle = '#1a1208';
-  bctx.font = 'bold 32px "Noto Serif TC", serif';
-  bctx.textBaseline = 'middle';
-  const firstNum = answered[0].num, lastNum = answered[answered.length - 1].num;
-  const title = titleBase + '  ・  作答 ' + answered.length + ' 題（第 ' + firstNum + '–' + lastNum + ' 題）' +
-                '  ・  耗時 ' + Math.floor(elapsed / 60) + ' 分 ' + (elapsed % 60) + ' 秒';
-  bctx.fillText(title, PAD, EXTRA_TOP + HEADER_H / 2);
-  for (let s = 0; s < answered.length; s++) {
-    const col = s % COLS;
-    const row = Math.floor(s / COLS);
-    const x = PAD + col * CELL_W;
-    const y = EXTRA_TOP + HEADER_H + PAD + row * CELL_H;
-    drawExamCell(bctx, x, y, CELL_W, CELL_H, answered[s].num, answered[s].item, answered[s].img);
-  }
-  const blob = await new Promise(res => big.toBlob(res, 'image/png'));
-  if (!blob) { showToast('產生圖片失敗（畫布可能超過裝置上限）', true); return; }
   const safeTitle = titleBase.replace(/[\\\/:*?"<>|]/g, '_');
-  triggerDownload(blob, safeTitle + '_作答圖_' + dateStr + '.png');
-  showToast('✓ 已匯出作答圖（' + answered.length + ' 題）');
+  const elapsed = state.examStart ? Math.floor((Date.now() - state.examStart)/1000) : 0;
+  showToast('產生 ' + numBatches + ' 張作答圖...');
+  // Render each batch as a PNG blob and inject into the result page with its own download button.
+  const wrap = document.getElementById('examImagesWrap');
+  wrap.innerHTML = '';
+  wrap.classList.remove('hidden');
+  // Revoke any previously-created blob URLs to avoid leaks
+  if (window.__examBlobUrls) window.__examBlobUrls.forEach(u => URL.revokeObjectURL(u));
+  window.__examBlobUrls = [];
+  for (let bi = 0; bi < numBatches; bi++) {
+    const slice = answered.slice(bi * PER_BATCH, (bi + 1) * PER_BATCH);
+    const blob = await renderBatch({ slice, batchIdx: bi, numBatches, titleBase, elapsed, dateStr });
+    if (!blob) { showToast('第 ' + (bi+1) + ' 張產生失敗', true); continue; }
+    const firstNum = slice[0].num, lastNum = slice[slice.length - 1].num;
+    const filename = safeTitle + '_作答圖_第' + firstNum + '-' + lastNum + '題_' + dateStr + '.png';
+    const url = URL.createObjectURL(blob);
+    window.__examBlobUrls.push(url);
+    const card = document.createElement('div');
+    card.className = 'exam-image-card';
+    card.innerHTML =
+      '<div class="exam-image-toolbar">' +
+        '<span class="exam-image-label">第 ' + firstNum + '–' + lastNum + ' 題（' + slice.length + ' 題）</span>' +
+        '<button class="btn-export-batch">📥 匯出作答圖（給老師批改）</button>' +
+      '</div>' +
+      '<img class="exam-image-png" alt="作答圖 第' + firstNum + '-' + lastNum + '題">';
+    const img = card.querySelector('img'); img.src = url;
+    const btn = card.querySelector('button');
+    btn.addEventListener('click', () => triggerDownload(blob, filename));
+    wrap.appendChild(card);
+    // Yield so UI updates between batches
+    await new Promise(r => setTimeout(r, 30));
+  }
+  showToast('✓ 已產生 ' + numBatches + ' 張作答圖');
+  wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function triggerDownload(blob, filename) {
@@ -1065,8 +1078,9 @@ async function renderBatch(o) {
   const COLS = 10;
   const ROWS = Math.ceil(slice.length / COLS) || 1;
   const CELL_W = 260, CELL_H = 320, PAD = 16, HEADER_H = 80;
+  const EXTRA_TOP = CELL_H; // 多一行的高度，方便在 iPad 上瀏覽
   const totalW = COLS * CELL_W + PAD * 2;
-  const totalH = HEADER_H + ROWS * CELL_H + PAD * 2;
+  const totalH = EXTRA_TOP + HEADER_H + ROWS * CELL_H + PAD * 2;
   const big = document.createElement('canvas');
   big.width = totalW; big.height = totalH;
   const bctx = big.getContext('2d');
@@ -1078,12 +1092,12 @@ async function renderBatch(o) {
   let t = titleBase + '  ・  作答 ' + firstNum + '–' + lastNum + ' 題';
   if (numBatches > 1) t += '  ・ (第 ' + (batchIdx + 1) + ' / ' + numBatches + ' 張)';
   t += '  ・ 耗時 ' + Math.floor(elapsed / 60) + ' 分 ' + (elapsed % 60) + ' 秒';
-  bctx.fillText(t, PAD, HEADER_H / 2);
+  bctx.fillText(t, PAD, EXTRA_TOP + HEADER_H / 2);
   for (let s = 0; s < slice.length; s++) {
     const col = s % COLS;
     const row = Math.floor(s / COLS);
     const x = PAD + col * CELL_W;
-    const y = HEADER_H + PAD + row * CELL_H;
+    const y = EXTRA_TOP + HEADER_H + PAD + row * CELL_H;
     drawExamCell(bctx, x, y, CELL_W, CELL_H, slice[s].num, slice[s].item, slice[s].img);
   }
   return await new Promise(res => { big.toBlob(blob => res(blob), 'image/png'); });
